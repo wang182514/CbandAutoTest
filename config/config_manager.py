@@ -12,13 +12,16 @@ from typing import Any
 class _ConfigNode(dict):
     """A dict that allows attribute-style access recursively."""
 
+    def __getitem__(self, key):
+        val = super().__getitem__(key)
+        if isinstance(val, dict) and not isinstance(val, _ConfigNode):
+            val = _ConfigNode(val)
+            super().__setitem__(key, val)
+        return val
+
     def __getattr__(self, key: str) -> Any:
         if key in self:
-            val = self[key]
-            if isinstance(val, dict) and not isinstance(val, _ConfigNode):
-                val = _ConfigNode(val)
-                self[key] = val
-            return val
+            return self[key]
         raise AttributeError(f"No such key: {key}")
 
     def __setattr__(self, key: str, value: Any):
