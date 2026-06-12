@@ -44,8 +44,10 @@ class ConfigManager:
     # ---- load / save -------------------------------------------------------
 
     def load(self, path: str):
-        """Load a user settings file (overwrites current data)."""
-        self._load_from(path)
+        """Deep-merge a user settings file on top of current data."""
+        with open(path, "r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+        self._deep_merge(self._data, raw)
         self._file_path = path
 
     def save(self, path: str = None):
@@ -118,6 +120,15 @@ class ConfigManager:
         with open(path, "r", encoding="utf-8") as fh:
             raw = json.load(fh)
         self._data = _ConfigNode(raw)
+
+    @staticmethod
+    def _deep_merge(base: dict, overlay: dict):
+        """Recursively merge overlay into base in-place."""
+        for key, val in overlay.items():
+            if key in base and isinstance(base[key], dict) and isinstance(val, dict):
+                ConfigManager._deep_merge(base[key], val)
+            else:
+                base[key] = val
 
     def __repr__(self):
         return f"<ConfigManager file={self._file_path!r}>"
