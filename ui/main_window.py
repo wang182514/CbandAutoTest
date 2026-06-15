@@ -318,9 +318,9 @@ class MainWindow(QMainWindow):
         if self._runner and self._runner.isRunning():
             self._runner.request_stop()
             self._status.showMessage("正在停止测试线程...")
-            if not self._runner.wait(3000):  # 3s grace
+            if not self._runner.wait(5000):  # 5s grace
                 self._runner.terminate()
-                self._runner.wait(1000)
+                self._runner.wait(2000)
         self._on_disconnect_all()
         event.accept()
 

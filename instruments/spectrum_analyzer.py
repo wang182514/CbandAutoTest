@@ -84,9 +84,12 @@ class SpectrumAnalyzer:
         """Turn off all markers and marker functions.
         N9020A has a known bug where residual marker settings
         can affect subsequent measurements — always call this
-        at the end of each test."""
-        self._inst.write(":CALCulate:MARKer:AOFF")
-        self._inst.write(":CALCulate:MARKer1:FUNCtion OFF")
+        at the end of each test.  Safe to call after disconnect."""
+        try:
+            self._inst.write(":CALCulate:MARKer:AOFF")
+            self._inst.write(":CALCulate:MARKer1:FUNCtion OFF")
+        except Exception:
+            pass  # connection already dead — nothing to clean
 
     # ---- SA mode -----------------------------------------------------------
 
@@ -203,10 +206,16 @@ class SpectrumAnalyzer:
         self._inst.write(f":FREQ:CENT {freq_ghz:.3f}GHz")
 
     def pn_init_measurement(self):
-        """Single-shot PN measurement with *OPC? synchronization."""
+        """Single-shot PN measurement with *OPC? synchronization.
+        PN measurements can take 60-120s — temporarily extend timeout."""
         self._inst.write(":INIT:CONT OFF")
         self._inst.write(":INIT:IMM")
-        self._inst.query("*OPC?")
+        old_timeout = self._inst.timeout
+        try:
+            self._inst.timeout = max(old_timeout, 120000)  # 2 min
+            self._inst.query("*OPC?")
+        finally:
+            self._inst.timeout = old_timeout
 
     def pn_read_spot(self, marker_index: int) -> tuple[float, float]:
         """Read PN spot noise: returns (offset_Hz, noise_dBc_per_Hz)."""
