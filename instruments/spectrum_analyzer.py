@@ -148,14 +148,22 @@ class SpectrumAnalyzer:
         self._inst.write(":CALC:MARK1:PTP")
         return float(self._inst.query(":CALC:MARK1:Y?"))
 
-    def sa_marker_noise(self, freq_mhz: float) -> float:
-        """Set marker to freq, enable noise function, read noise level (dBm/Hz)."""
+    def sa_marker_noise(self, freq_mhz: float, wait_sec: float = 3.0) -> float:
+        """Set marker to freq, enable noise function, read noise level (dBm/Hz).
+        wait_sec: delay before reading (MATLAB original uses 3s; N9020A needs
+        time to compute noise marker after enabling the function)."""
         self._inst.write(":CALCulate:MARKer:AOFF")
         self._inst.write(":CALCulate:MARKer1:STATe ON")
         self._inst.write(f":CALCulate:MARKer1:X {freq_mhz:.0f}MHz")
         self._inst.write(":CALCulate:MARKer1:FUNCtion NOIS")
-        time.sleep(2)
-        return float(self._inst.query(":CALCulate:MARKer1:Y?"))
+        time.sleep(wait_sec)
+        # Timeout-guarded read — N9020A may be slow with narrow RBW
+        old_timeout = self._inst.timeout
+        try:
+            self._inst.timeout = max(old_timeout, 15000)  # ≥15s for query
+            return float(self._inst.query(":CALCulate:MARKer1:Y?"))
+        finally:
+            self._inst.timeout = old_timeout
 
     # ---- NF mode -----------------------------------------------------------
 

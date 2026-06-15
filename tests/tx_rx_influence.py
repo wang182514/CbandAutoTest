@@ -46,6 +46,7 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
             # Configure SA for narrow span around RX IF
             span_mhz = sa_cfg.span_mhz
             base.sa.set_mode_sa()
+            time.sleep(0.3)
             base.sa.sa_set_offset(0)
             base.sa.sa_configure_mhz(
                 start_mhz=rx_freq - span_mhz,
@@ -55,6 +56,8 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
                 ref_level_dbm=sa_cfg.ref_level_dbm,
                 trace_type="WRIT",
             )
+            # POS detector — required for noise marker (matches MATLAB :DET:TRAC1:POS ON)
+            base.sa.inst.write(":DET:TRAC1:POS ON")
 
             # ---- TX OFF: measure noise ----
             base.tx_pwr.set_output(False)
