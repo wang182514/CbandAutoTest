@@ -10,8 +10,7 @@ from datetime import datetime
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QGroupBox, QLabel, QLineEdit, QPushButton, QTextEdit,
-    QCheckBox, QProgressBar, QTabWidget, QTableWidget,
-    QTableWidgetItem, QHeaderView, QMessageBox, QFileDialog,
+    QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
     QStatusBar, QSplitter, QApplication, QScrollArea,
     QSizePolicy,
 )
@@ -20,6 +19,7 @@ from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from config.config_manager import ConfigManager
 from ui.settings_dialog import SettingsDialog
 from ui.test_runner import TestRunner
+from ui.results_panel import ResultsPanel
 from utils.logger import Logger
 from utils.report import ReportGenerator
 
@@ -172,17 +172,9 @@ class MainWindow(QMainWindow):
         # ---- right panel ----
         right = QVBoxLayout()
 
-        # Results table
-        self._results_table = QTableWidget(0, 3)
-        self._results_table.setHorizontalHeaderLabels(["测试项目", "结果", "详情"])
-        self._results_table.horizontalHeader().setStretchLastSection(True)
-        self._results_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self._results_table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.ResizeToContents
-        )
-        right.addWidget(self._results_table, 2)
+        # Results panel
+        self._results_panel = ResultsPanel()
+        right.addWidget(self._results_panel, 2)
 
         # Log output
         grp_log = QGroupBox("日志")
@@ -396,7 +388,7 @@ class MainWindow(QMainWindow):
 
         self._save_ui_to_config()
 
-        self._results_table.setRowCount(0)
+        self._results_panel.clear_results()
         self._log_view.clear()
 
         all_tests = [
@@ -437,34 +429,13 @@ class MainWindow(QMainWindow):
             self._status.showMessage("正在停止...")
 
     def _on_test_result(self, test_name: str, passed: bool, messages: list):
-        # Find existing row for this test name — overwrite if found
-        row = -1
-        for r in range(self._results_table.rowCount()):
-            item = self._results_table.item(r, 0)
-            if item and item.text() == test_name:
-                row = r
+        # Find the latest data for this test from accumulated results
+        data = {}
+        for r in self._all_results:
+            if r.get("name") == test_name:
+                data = r.get("data", {})
                 break
-
-        if row < 0:
-            row = self._results_table.rowCount()
-            self._results_table.insertRow(row)
-
-        name_item = QTableWidgetItem(test_name)
-        name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-
-        result_item = QTableWidgetItem("✓ PASS" if passed else "✗ FAIL")
-        result_item.setFlags(result_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        if passed:
-            result_item.setForeground(Qt.GlobalColor.darkGreen)
-        else:
-            result_item.setForeground(Qt.GlobalColor.red)
-
-        detail_item = QTableWidgetItem("\n".join(messages))
-        detail_item.setFlags(detail_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-
-        self._results_table.setItem(row, 0, name_item)
-        self._results_table.setItem(row, 1, result_item)
-        self._results_table.setItem(row, 2, detail_item)
+        self._results_panel.set_result(test_name, passed, messages, data)
 
     def _on_progress(self, current: int, total: int):
         self._progress.setValue(current)
@@ -483,6 +454,15 @@ class MainWindow(QMainWindow):
 
         # Enable report button once we have at least one result
         self._btn_report.setEnabled(len(self._all_results) > 0)
+
+        # Also refresh the results panel with the final accumulated data
+        for r in self._all_results:
+            self._results_panel.set_result(
+                r.get("name", ""),
+                r.get("passed", False),
+                r.get("messages", []),
+                r.get("data", {}),
+            )
 
         # Summary
         total = len(results)
