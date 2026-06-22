@@ -12,7 +12,8 @@ from PySide6.QtWidgets import (
     QGroupBox, QLabel, QLineEdit, QPushButton, QTextEdit,
     QCheckBox, QProgressBar, QTabWidget, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QFileDialog,
-    QStatusBar, QSplitter, QApplication,
+    QStatusBar, QSplitter, QApplication, QScrollArea,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
@@ -66,23 +67,36 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         root = QHBoxLayout(central)
 
-        # ---- left panel ----
-        left = QVBoxLayout()
+        # ---- left panel (scrollable so it fits small screens) ----
+        left_scroll = QScrollArea()
+        left_scroll.setWidgetResizable(True)
+        left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        left_scroll.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        left_container = QWidget()
+        left = QVBoxLayout(left_container)
         left.setStretch(0, 0)
 
-        # --- instrument status group ---
+        # --- instrument status group with colored indicators ---
         grp_inst = QGroupBox("仪器状态")
         g1 = QVBoxLayout(grp_inst)
+
+        self._ind_rx_pwr = self._create_status_indicator()
+        self._ind_tx_pwr = self._create_status_indicator()
+        self._ind_vsg = self._create_status_indicator()
+        self._ind_sa = self._create_status_indicator()
+        self._ind_switch = self._create_status_indicator()
+
         self._lbl_rx_pwr = QLabel("接收电源: 未连接")
         self._lbl_tx_pwr = QLabel("发射电源: 未连接")
         self._lbl_vsg = QLabel("信号源: 未连接")
         self._lbl_sa = QLabel("频谱仪: 未连接")
         self._lbl_switch = QLabel("开关矩阵: 未连接")
-        g1.addWidget(self._lbl_rx_pwr)
-        g1.addWidget(self._lbl_tx_pwr)
-        g1.addWidget(self._lbl_vsg)
-        g1.addWidget(self._lbl_sa)
-        g1.addWidget(self._lbl_switch)
+
+        g1.addLayout(self._status_row(self._ind_rx_pwr, self._lbl_rx_pwr))
+        g1.addLayout(self._status_row(self._ind_tx_pwr, self._lbl_tx_pwr))
+        g1.addLayout(self._status_row(self._ind_vsg, self._lbl_vsg))
+        g1.addLayout(self._status_row(self._ind_sa, self._lbl_sa))
+        g1.addLayout(self._status_row(self._ind_switch, self._lbl_switch))
 
         btn_connect = QPushButton("连接全部仪表")
         btn_connect.clicked.connect(self._on_connect_all)
@@ -152,7 +166,8 @@ class MainWindow(QMainWindow):
         left.addWidget(grp_test)
 
         left.addStretch()
-        root.addLayout(left, 0)
+        left_scroll.setWidget(left_container)
+        root.addWidget(left_scroll, 0)
 
         # ---- right panel ----
         right = QVBoxLayout()
@@ -183,6 +198,38 @@ class MainWindow(QMainWindow):
         self._status = QStatusBar()
         self._status.showMessage("就绪")
         self.setStatusBar(self._status)
+
+    # ========================================================================
+    #  Status indicator helpers
+    # ========================================================================
+
+    @staticmethod
+    def _create_status_indicator() -> QLabel:
+        """Create a small colored square used as a connection status light."""
+        ind = QLabel()
+        ind.setFixedSize(14, 14)
+        ind.setStyleSheet("background-color: #9E9E9E; border-radius: 7px;")
+        return ind
+
+    @staticmethod
+    def _status_row(indicator: QLabel, label: QLabel) -> QHBoxLayout:
+        row = QHBoxLayout()
+        row.addWidget(indicator)
+        row.addWidget(label, 1)
+        row.setSpacing(8)
+        row.setContentsMargins(0, 2, 0, 2)
+        return row
+
+    def _set_status_indicator(self, indicator: QLabel, state: str):
+        """Update indicator color: 'ok' green, 'error' red, 'idle' gray."""
+        colors = {
+            "ok": "#4CAF50",
+            "error": "#F44336",
+            "idle": "#9E9E9E",
+        }
+        indicator.setStyleSheet(
+            f"background-color: {colors.get(state, colors['idle'])}; border-radius: 7px;"
+        )
 
     # ========================================================================
     #  Config ↔ UI
@@ -234,9 +281,11 @@ class MainWindow(QMainWindow):
             )
             idn = self._rx_pwr.connect()
             self._lbl_rx_pwr.setText(f"接收电源: ✓ {idn}")
+            self._set_status_indicator(self._ind_rx_pwr, "ok")
             self._log(f"  RX电源: {idn}")
         except Exception as e:
             self._lbl_rx_pwr.setText(f"接收电源: ✗ {e}")
+            self._set_status_indicator(self._ind_rx_pwr, "error")
             self._log(f"  RX电源失败: {e}")
 
         # TX Power Supply
@@ -248,9 +297,11 @@ class MainWindow(QMainWindow):
             )
             idn = self._tx_pwr.connect()
             self._lbl_tx_pwr.setText(f"发射电源: ✓ {idn}")
+            self._set_status_indicator(self._ind_tx_pwr, "ok")
             self._log(f"  TX电源: {idn}")
         except Exception as e:
             self._lbl_tx_pwr.setText(f"发射电源: ✗ {e}")
+            self._set_status_indicator(self._ind_tx_pwr, "error")
             self._log(f"  TX电源失败: {e}")
 
         # Signal Generator
@@ -262,9 +313,11 @@ class MainWindow(QMainWindow):
             )
             idn = self._vsg.connect()
             self._lbl_vsg.setText(f"信号源: ✓ {idn}")
+            self._set_status_indicator(self._ind_vsg, "ok")
             self._log(f"  信号源: {idn}")
         except Exception as e:
             self._lbl_vsg.setText(f"信号源: ✗ {e}")
+            self._set_status_indicator(self._ind_vsg, "error")
             self._log(f"  信号源失败: {e}")
 
         # Spectrum Analyzer
@@ -276,9 +329,11 @@ class MainWindow(QMainWindow):
             )
             idn = self._sa.connect()
             self._lbl_sa.setText(f"频谱仪: ✓ {idn}")
+            self._set_status_indicator(self._ind_sa, "ok")
             self._log(f"  频谱仪: {idn}")
         except Exception as e:
             self._lbl_sa.setText(f"频谱仪: ✗ {e}")
+            self._set_status_indicator(self._ind_sa, "error")
             self._log(f"  频谱仪失败: {e}")
 
         # Switch Matrix
@@ -290,9 +345,11 @@ class MainWindow(QMainWindow):
             )
             self._switch.connect()
             self._lbl_switch.setText(f"开关矩阵: ✓ {cfg.switch_matrix.com_port}")
+            self._set_status_indicator(self._ind_switch, "ok")
             self._log(f"  开关矩阵: {cfg.switch_matrix.com_port}")
         except Exception as e:
             self._lbl_switch.setText(f"开关矩阵: ✗ {e}")
+            self._set_status_indicator(self._ind_switch, "error")
             self._log(f"  开关矩阵失败: {e}")
 
         self._status.showMessage("仪表连接完成")
@@ -310,6 +367,9 @@ class MainWindow(QMainWindow):
         self._lbl_vsg.setText("信号源: 未连接")
         self._lbl_sa.setText("频谱仪: 未连接")
         self._lbl_switch.setText("开关矩阵: 未连接")
+        for ind in [self._ind_rx_pwr, self._ind_tx_pwr, self._ind_vsg,
+                    self._ind_sa, self._ind_switch]:
+            self._set_status_indicator(ind, "idle")
         self._log("=== 已断开全部仪表 ===")
         self._status.showMessage("已断开全部仪表")
 
