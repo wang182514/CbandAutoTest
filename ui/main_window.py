@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QGroupBox, QLabel, QLineEdit, QPushButton, QTextEdit,
     QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
-    QStatusBar, QSplitter, QApplication, QScrollArea,
+    QStatusBar, QSplitter, QApplication, QScrollArea, QSizePolicy,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
@@ -20,7 +20,7 @@ from ui.settings_dialog import SettingsDialog
 from ui.test_runner import TestRunner
 from ui.results_panel import ResultsPanel
 from utils.logger import Logger
-from utils.report import ReportGenerator
+from utils.report import ReportGenerator, sanitize_results
 
 
 class MainWindow(QMainWindow):
@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
         left_scroll.setWidgetResizable(True)
         left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         left_scroll.setMinimumWidth(260)
+        left_scroll.setMaximumWidth(360)
         left_container = QWidget()
         left = QVBoxLayout(left_container)
         left.setStretch(0, 0)
@@ -87,10 +88,15 @@ class MainWindow(QMainWindow):
         self._ind_switch = self._create_status_indicator()
 
         self._lbl_rx_pwr = QLabel("接收电源: 未连接")
+        self._lbl_rx_pwr.setWordWrap(True)
         self._lbl_tx_pwr = QLabel("发射电源: 未连接")
+        self._lbl_tx_pwr.setWordWrap(True)
         self._lbl_vsg = QLabel("信号源: 未连接")
+        self._lbl_vsg.setWordWrap(True)
         self._lbl_sa = QLabel("频谱仪: 未连接")
+        self._lbl_sa.setWordWrap(True)
         self._lbl_switch = QLabel("开关矩阵: 未连接")
+        self._lbl_switch.setWordWrap(True)
 
         g1.addLayout(self._status_row(self._ind_rx_pwr, self._lbl_rx_pwr))
         g1.addLayout(self._status_row(self._ind_tx_pwr, self._lbl_tx_pwr))
@@ -133,6 +139,7 @@ class MainWindow(QMainWindow):
 
         self._btn_run_all = QPushButton("▶ 运行全部测试")
         self._btn_run_all.clicked.connect(lambda: self._run_tests(None))
+        self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_run_all)
 
         # Individual test buttons
@@ -144,15 +151,16 @@ class MainWindow(QMainWindow):
             ("tx_rx_influence", "收发干扰"),
         ]
         for name, label in test_names:
-            row = QHBoxLayout()
             btn = QPushButton(label)
+            btn.setMaximumWidth(320)
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             btn.clicked.connect(lambda checked, n=name: self._run_tests([n]))
-            row.addWidget(btn, 1)
-            g3.addLayout(row)
+            g3.addWidget(btn)
 
         self._btn_stop = QPushButton("■ 停止")
         self._btn_stop.clicked.connect(self._on_stop)
         self._btn_stop.setEnabled(False)
+        self._btn_stop.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_stop)
 
         self._progress = QProgressBar()
@@ -162,6 +170,7 @@ class MainWindow(QMainWindow):
         self._btn_report = QPushButton("📄 写入报告")
         self._btn_report.clicked.connect(self._on_write_report)
         self._btn_report.setEnabled(False)
+        self._btn_report.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_report)
         left.addWidget(grp_test)
 
@@ -212,6 +221,13 @@ class MainWindow(QMainWindow):
         ind.setFixedSize(14, 14)
         ind.setStyleSheet("background-color: #9E9E9E; border-radius: 7px;")
         return ind
+
+    @staticmethod
+    def _trim_idn(idn: str, max_len: int = 35) -> str:
+        """Truncate long IDN strings so status labels stay single-line."""
+        if len(idn) <= max_len:
+            return idn
+        return idn[:max_len] + "…"
 
     @staticmethod
     def _status_row(indicator: QLabel, label: QLabel) -> QHBoxLayout:
@@ -282,7 +298,8 @@ class MainWindow(QMainWindow):
                 timeout_sec=cfg.rx_power_supply.timeout_sec,
             )
             idn = self._rx_pwr.connect()
-            self._lbl_rx_pwr.setText(f"接收电源: ✓ {idn}")
+            self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
+            self._lbl_rx_pwr.setToolTip(idn)
             self._set_status_indicator(self._ind_rx_pwr, "ok")
             self._log(f"  RX电源: {idn}")
         except Exception as e:
@@ -298,7 +315,8 @@ class MainWindow(QMainWindow):
                 timeout_sec=cfg.tx_power_supply.timeout_sec,
             )
             idn = self._tx_pwr.connect()
-            self._lbl_tx_pwr.setText(f"发射电源: ✓ {idn}")
+            self._lbl_tx_pwr.setText(f"发射电源: ✓ {self._trim_idn(idn)}")
+            self._lbl_tx_pwr.setToolTip(idn)
             self._set_status_indicator(self._ind_tx_pwr, "ok")
             self._log(f"  TX电源: {idn}")
         except Exception as e:
@@ -314,7 +332,8 @@ class MainWindow(QMainWindow):
                 timeout_ms=int(cfg.signal_generator.timeout_sec * 1000),
             )
             idn = self._vsg.connect()
-            self._lbl_vsg.setText(f"信号源: ✓ {idn}")
+            self._lbl_vsg.setText(f"信号源: ✓ {self._trim_idn(idn)}")
+            self._lbl_vsg.setToolTip(idn)
             self._set_status_indicator(self._ind_vsg, "ok")
             self._log(f"  信号源: {idn}")
         except Exception as e:
@@ -330,7 +349,8 @@ class MainWindow(QMainWindow):
                 timeout_ms=int(cfg.spectrum_analyzer.timeout_sec * 1000),
             )
             idn = self._sa.connect()
-            self._lbl_sa.setText(f"频谱仪: ✓ {idn}")
+            self._lbl_sa.setText(f"频谱仪: ✓ {self._trim_idn(idn)}")
+            self._lbl_sa.setToolTip(idn)
             self._set_status_indicator(self._ind_sa, "ok")
             self._log(f"  频谱仪: {idn}")
         except Exception as e:
@@ -346,9 +366,11 @@ class MainWindow(QMainWindow):
                 timeout_sec=cfg.switch_matrix.timeout_sec,
             )
             self._switch.connect()
-            self._lbl_switch.setText(f"开关矩阵: ✓ {cfg.switch_matrix.com_port}")
+            com = cfg.switch_matrix.com_port
+            self._lbl_switch.setText(f"开关矩阵: ✓ {com}")
+            self._lbl_switch.setToolTip(f"COM端口: {com}")
             self._set_status_indicator(self._ind_switch, "ok")
-            self._log(f"  开关矩阵: {cfg.switch_matrix.com_port}")
+            self._log(f"  开关矩阵: {com}")
         except Exception as e:
             self._lbl_switch.setText(f"开关矩阵: ✗ {e}")
             self._set_status_indicator(self._ind_switch, "error")
@@ -365,10 +387,15 @@ class MainWindow(QMainWindow):
                     pass
         self._rx_pwr = self._tx_pwr = self._vsg = self._sa = self._switch = None
         self._lbl_rx_pwr.setText("接收电源: 未连接")
+        self._lbl_rx_pwr.setToolTip("")
         self._lbl_tx_pwr.setText("发射电源: 未连接")
+        self._lbl_tx_pwr.setToolTip("")
         self._lbl_vsg.setText("信号源: 未连接")
+        self._lbl_vsg.setToolTip("")
         self._lbl_sa.setText("频谱仪: 未连接")
+        self._lbl_sa.setToolTip("")
         self._lbl_switch.setText("开关矩阵: 未连接")
+        self._lbl_switch.setToolTip("")
         for ind in [self._ind_rx_pwr, self._ind_tx_pwr, self._ind_vsg,
                     self._ind_sa, self._ind_switch]:
             self._set_status_indicator(ind, "idle")
@@ -509,6 +536,7 @@ class MainWindow(QMainWindow):
             # DOCX requires Word template
             template = os.path.join(base_dir, "..", self.config.get("report.template_file", "CbandTemplate.docx"))
             if os.path.exists(template):
+                # --- 内部 Word 报告 (真实数据) ---
                 docx_path = report_gen.generate_docx(
                     all_results=self._all_results,
                     output_dir=os.path.join(base_dir, "output", "reports"),
@@ -517,6 +545,18 @@ class MainWindow(QMainWindow):
                 )
                 if docx_path:
                     self._log(f"Word 报告已生成: {docx_path}")
+
+                # --- 客户 Word 报告 (合规数据) ---
+                sanitized = sanitize_results(self._all_results, self.config)
+                customer_sn = f"{sn}_toC"
+                docx_customer_path = report_gen.generate_docx(
+                    all_results=sanitized,
+                    output_dir=os.path.join(base_dir, "output", "reports"),
+                    sn=customer_sn,
+                    template_path=template,
+                )
+                if docx_customer_path:
+                    self._log(f"客户 Word 报告已生成: {docx_customer_path}")
             else:
                 self._log(f"Word 模板未找到: {template}，跳过 docx 生成")
 
