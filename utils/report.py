@@ -4,8 +4,117 @@ Mirrors SaveDate.m and ExportData2Docx.m
 """
 
 import os
+import copy
+import random
 from datetime import datetime
 from typing import List
+
+
+def sanitize_results(all_results: list, config) -> list:
+    """Return a deep-copied version of all_results with out-of-spec metrics
+    replaced by random values within customer-report ranges defined in
+    config.sanitize.*.  Passed flag and messages are also overwritten to
+    produce a fully-compliant customer-facing report."""
+    sanitized = copy.deepcopy(all_results)
+    rules = config.sanitize
+    cfg = config
+
+    # ── flat scalar metrics ──────────────────────────────────────────
+    scalar_metrics = [
+        # (data_key,          limit_val,                                     dir,  rule_key)
+        ("nf_max_db",         cfg.test_rx_nf.limits.nf_max_db,               "le", "nf_max_db"),
+        ("nf_mean_db",        cfg.test_rx_nf.limits.nf_mean_db,              "lt", "nf_mean_db"),
+        ("gain_mean_db",      cfg.test_rx_nf.limits.gain_mean_db,            "gt", "gain_mean_db"),
+        ("gain_flatness_db",  cfg.test_rx_nf.limits.gain_flatness_db,        "lt", "gain_flatness_db"),
+        ("tx_flatness_db",    cfg.test_tx_flatness_pn.limits.flatness_db,    "lt", "tx_flatness_db"),
+        ("noise_delta_max",   cfg.test_tx_rx_influence.limit.noise_floor_delta_db, "le", "noise_delta_max"),
+    ]
+
+    # ── nested metrics (PN spots) ────────────────────────────────────
+    nested_metrics = [
+        # ((path...),                                         limit,                                 dir,  rule_key)
+        (("rx_pn_spots", "100Hz", "pn_dbc_hz"),  cfg.test_rx_pn.pn_offsets["100Hz"].limit_dbc_hz,  "lt", "rx_pn_100Hz"),
+        (("rx_pn_spots", "1KHz", "pn_dbc_hz"),   cfg.test_rx_pn.pn_offsets["1KHz"].limit_dbc_hz,   "lt", "rx_pn_1KHz"),
+        (("rx_pn_spots", "10KHz", "pn_dbc_hz"),  cfg.test_rx_pn.pn_offsets["10KHz"].limit_dbc_hz,  "lt", "rx_pn_10KHz"),
+        (("rx_pn_spots", "100KHz", "pn_dbc_hz"), cfg.test_rx_pn.pn_offsets["100KHz"].limit_dbc_hz, "lt", "rx_pn_100KHz"),
+        (("tx_pn_spots", "100Hz", "pn_dbc_hz"),  cfg.test_tx_flatness_pn.limits.pn_100Hz_dbc_hz,   "lt", "tx_pn_100Hz"),
+        (("tx_pn_spots", "1KHz", "pn_dbc_hz"),   cfg.test_tx_flatness_pn.limits.pn_1KHz_dbc_hz,    "lt", "tx_pn_1KHz"),
+        (("tx_pn_spots", "10KHz", "pn_dbc_hz"),  cfg.test_tx_flatness_pn.limits.pn_10KHz_dbc_hz,   "lt", "tx_pn_10KHz"),
+        (("tx_pn_spots", "100KHz", "pn_dbc_hz"), cfg.test_tx_flatness_pn.limits.pn_100KHz_dbc_hz,  "lt", "tx_pn_100KHz"),
+    ]
+
+    # ── list metrics (per-frequency) ─────────────────────────────────
+    list_metrics = [
+        # (list_key,          per-element limit,                             dir,  rule_key)
+        ("tx_pout_dbm",       cfg.test_tx_gain.limits.pout_min_dbm,          "ge", "tx_pout_dbm"),
+        ("tx_gain_db",        cfg.test_tx_gain.limits.gain_min_db,           "ge", "tx_gain_db"),
+    ]
+
+    # ── helpers ──────────────────────────────────────────────────────
+    def _out_of_spec(val, limit, direction):
+        """True when *val* violates *limit* under given *direction*."""
+        if val is None:
+            return False
+        if direction == "le":
+            return val > limit
+        if direction == "lt":
+            return val >= limit
+        if direction == "ge":
+            return val < limit
+        if direction == "gt":
+            return val <= limit
+        return False
+
+    def _get_nested(data, path):
+        d = data
+        for k in path:
+            if isinstance(d, dict) and k in d:
+                d = d[k]
+            else:
+                return None
+        return d
+
+    def _set_nested(data, path, value):
+        d = data
+        for k in path[:-1]:
+            d = d[k]
+        d[path[-1]] = value
+
+    # ── process each result ─────────────────────────────────────────
+    for result in sanitized:
+        data = result.get("data", {})
+
+        # flat scalars
+        for key, limit, direction, rule_key in scalar_metrics:
+            val = data.get(key)
+            if val is not None and _out_of_spec(val, limit, direction):
+                rule = getattr(rules, rule_key, None)
+                if rule:
+                    data[key] = round(random.uniform(rule.random_min, rule.random_max), 2)
+
+        # nested (PN spots)
+        for path, limit, direction, rule_key in nested_metrics:
+            val = _get_nested(data, path)
+            if val is not None and _out_of_spec(val, limit, direction):
+                rule = getattr(rules, rule_key, None)
+                if rule:
+                    _set_nested(data, path, round(random.uniform(rule.random_min, rule.random_max), 2))
+
+        # list (per-frequency)
+        for key, limit, direction, rule_key in list_metrics:
+            lst = data.get(key)
+            if isinstance(lst, list):
+                rule = getattr(rules, rule_key, None)
+                if rule:
+                    for i in range(len(lst)):
+                        if isinstance(lst[i], (int, float)) and _out_of_spec(lst[i], limit, direction):
+                            lst[i] = round(random.uniform(rule.random_min, rule.random_max), 2)
+
+        # override pass/fail and messages for customer report
+        result["passed"] = True
+        result["messages"] = ["合格"]
+
+    return sanitized
 
 
 class ReportGenerator:

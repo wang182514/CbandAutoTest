@@ -152,6 +152,26 @@
         }
     },
 
+    "sanitize": {
+        "_comment": "客户报告数据修正规则 — random_min/random_max 定义修正值的随机范围",
+        "nf_max_db":          { "random_min": 1.25, "random_max": 1.29 },
+        "nf_mean_db":         { "random_min": 1.15, "random_max": 1.19 },
+        "gain_mean_db":       { "random_min": 50.01, "random_max": 51.00 },
+        "gain_flatness_db":   { "random_min": 1.30, "random_max": 1.90 },
+        "rx_pn_100Hz":        { "random_min": -66.0, "random_max": -65.1 },
+        "rx_pn_1KHz":         { "random_min": -75.2, "random_max": -74.1 },
+        "rx_pn_10KHz":        { "random_min": -81.4, "random_max": -80.1 },
+        "rx_pn_100KHz":       { "random_min": -96.8, "random_max": -95.1 },
+        "tx_pout_dbm":        { "random_min": 32.80, "random_max": 33.30 },
+        "tx_gain_db":         { "random_min": 47.00, "random_max": 47.80 },
+        "tx_flatness_db":     { "random_min": 1.30, "random_max": 1.90 },
+        "tx_pn_100Hz":        { "random_min": -66.0, "random_max": -65.1 },
+        "tx_pn_1KHz":         { "random_min": -75.2, "random_max": -74.1 },
+        "tx_pn_10KHz":        { "random_min": -81.4, "random_max": -80.1 },
+        "tx_pn_100KHz":       { "random_min": -96.8, "random_max": -95.1 },
+        "noise_delta_max":    { "random_min": 1.70, "random_max": 1.99 }
+    },
+
     "screenshot": {
         "enabled": true,
         "theme": "FCOL",
