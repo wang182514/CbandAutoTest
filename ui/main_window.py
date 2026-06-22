@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QGroupBox, QLabel, QLineEdit, QPushButton, QTextEdit,
     QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
     QStatusBar, QSplitter, QApplication, QScrollArea,
-    QSizePolicy,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
@@ -66,12 +65,13 @@ class MainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         root = QHBoxLayout(central)
+        root.setContentsMargins(6, 6, 6, 6)
 
         # ---- left panel (scrollable so it fits small screens) ----
         left_scroll = QScrollArea()
         left_scroll.setWidgetResizable(True)
         left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        left_scroll.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        left_scroll.setMinimumWidth(260)
         left_container = QWidget()
         left = QVBoxLayout(left_container)
         left.setStretch(0, 0)
@@ -167,13 +167,15 @@ class MainWindow(QMainWindow):
 
         left.addStretch()
         left_scroll.setWidget(left_container)
-        root.addWidget(left_scroll, 0)
 
         # ---- right panel ----
-        right = QVBoxLayout()
+        right_widget = QWidget()
+        right = QVBoxLayout(right_widget)
+        right.setContentsMargins(0, 0, 0, 0)
 
         # Results panel
         self._results_panel = ResultsPanel()
+        self._results_panel.setMinimumHeight(200)
         right.addWidget(self._results_panel, 2)
 
         # Log output
@@ -181,10 +183,18 @@ class MainWindow(QMainWindow):
         g4 = QVBoxLayout(grp_log)
         self._log_view = QTextEdit()
         self._log_view.setReadOnly(True)
+        self._log_view.setMinimumHeight(80)
         g4.addWidget(self._log_view)
         right.addWidget(grp_log, 1)
 
-        root.addLayout(right, 1)
+        # ---- main splitter: left | right ----
+        main_splitter = QSplitter(Qt.Orientation.Horizontal)
+        main_splitter.addWidget(left_scroll)
+        main_splitter.addWidget(right_widget)
+        main_splitter.setSizes([300, 900])
+        main_splitter.setStretchFactor(0, 0)
+        main_splitter.setStretchFactor(1, 1)
+        root.addWidget(main_splitter, 1)
 
         # ---- status bar ----
         self._status = QStatusBar()
@@ -388,7 +398,8 @@ class MainWindow(QMainWindow):
 
         self._save_ui_to_config()
 
-        self._results_panel.clear_results()
+        # Keep previous results visible during this run; they will be
+        # overwritten as each test completes. Only clear the log.
         self._log_view.clear()
 
         all_tests = [
