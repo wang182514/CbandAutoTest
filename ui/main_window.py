@@ -142,20 +142,28 @@ class MainWindow(QMainWindow):
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_run_all)
 
-        # Individual test buttons
-        test_names = [
-            ("rx_nf", "RX 噪声系数 + 增益"),
-            ("rx_pn", "RX 相位噪声"),
-            ("tx_gain", "TX 增益 + 输出功率"),
-            ("tx_flatness_pn", "TX 平坦度 + 相位噪声"),
-            ("tx_rx_influence", "收发干扰"),
-        ]
-        for name, label in test_names:
-            btn = QPushButton(label)
-            btn.setMaximumWidth(320)
-            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            btn.clicked.connect(lambda checked, n=name: self._run_tests([n]))
-            g3.addWidget(btn)
+        # Individual test buttons — auto-generated from plugin registry
+        from ui.test_runner import TEST_REGISTRY
+
+        cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
+        groups: dict[str, list] = {}
+        for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
+            groups.setdefault(info["category"], []).append(info)
+
+        for cat in ["rx", "tx", "general"]:
+            if cat not in groups:
+                continue
+            if cat in cat_labels:
+                cat_lbl = QLabel(cat_labels[cat])
+                cat_lbl.setStyleSheet("color: #666; font-size: 11px; margin-top: 4px;")
+                g3.addWidget(cat_lbl)
+            for info in groups[cat]:
+                tid = info["id"]
+                btn = QPushButton(info["name"])
+                btn.setMaximumWidth(320)
+                btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                btn.clicked.connect(lambda checked, n=tid: self._run_tests([n]))
+                g3.addWidget(btn)
 
         self._btn_stop = QPushButton("■ 停止")
         self._btn_stop.clicked.connect(self._on_stop)
@@ -429,13 +437,8 @@ class MainWindow(QMainWindow):
         # overwritten as each test completes. Only clear the log.
         self._log_view.clear()
 
-        all_tests = [
-            "rx_nf",
-            "rx_pn",
-            "tx_gain",
-            "tx_flatness_pn",
-            "tx_rx_influence",
-        ]
+        from ui.test_runner import TEST_REGISTRY
+        all_tests = list(TEST_REGISTRY.keys())
         to_run = test_names if test_names else all_tests
 
         self._runner = TestRunner(

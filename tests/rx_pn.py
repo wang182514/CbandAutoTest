@@ -5,8 +5,10 @@ Mirrors SubProcess2_TestRXPN.m
 
 import time
 from .base import TestBase, TestResult
+from .plugin import register_test
 
 
+@register_test(id="rx_pn", name="RX 相位噪声", category="rx", order=2)
 def run_rx_pn(base: TestBase) -> TestResult:
     result = TestResult(test_name="RX Phase Noise")
     cfg = base.cfg.test_rx_pn

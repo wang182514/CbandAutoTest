@@ -6,8 +6,10 @@ Mirrors SubProcess1_TestRXNF.m
 import time
 import numpy as np
 from .base import TestBase, TestResult
+from .plugin import register_test
 
 
+@register_test(id="rx_nf", name="RX 噪声系数 + 增益", category="rx", order=1)
 def run_rx_nf(base: TestBase) -> TestResult:
     result = TestResult(test_name="RX NF & Gain & Flatness")
     cfg = base.cfg.test_rx_nf

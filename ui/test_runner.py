@@ -5,19 +5,9 @@ QThread test runner — runs tests sequentially without blocking the UI.
 from PySide6.QtCore import QThread, Signal
 
 from tests.base import TestBase
-from tests.rx_nf import run_rx_nf
-from tests.rx_pn import run_rx_pn
-from tests.tx_gain import run_tx_gain
-from tests.tx_flatness_pn import run_tx_flatness_pn
-from tests.tx_rx_influence import run_tx_rx_influence
+from tests.plugin import discover
 
-TEST_REGISTRY = {
-    "rx_nf":            ("RX 噪声系数 + 增益", run_rx_nf),
-    "rx_pn":            ("RX 相位噪声", run_rx_pn),
-    "tx_gain":          ("TX 增益 + 输出功率", run_tx_gain),
-    "tx_flatness_pn":   ("TX 平坦度 + 相位噪声", run_tx_flatness_pn),
-    "tx_rx_influence":  ("收发干扰", run_tx_rx_influence),
-}
+TEST_REGISTRY = discover()
 
 
 class TestRunner(QThread):
@@ -65,7 +55,13 @@ class TestRunner(QThread):
                 self.log_signal.emit("=== 用户停止 ===")
                 break
 
-            display_name, runner = TEST_REGISTRY.get(name, (name, None))
+            info = TEST_REGISTRY.get(name)
+            if info is None:
+                display_name = name
+                runner = None
+            else:
+                display_name = info["name"]
+                runner = info["runner"]
             if runner is None:
                 self.log_signal.emit(f"未知测试: {name}")
                 continue

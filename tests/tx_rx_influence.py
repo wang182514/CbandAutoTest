@@ -6,8 +6,10 @@ Mirrors SubProcess5_TestRXInfluence.m
 import time
 import numpy as np
 from .base import TestBase, TestResult
+from .plugin import register_test
 
 
+@register_test(id="tx_rx_influence", name="收发干扰", category="general", order=5)
 def run_tx_rx_influence(base: TestBase) -> TestResult:
     result = TestResult(test_name="TX-RX Interference")
     cfg = base.cfg.test_tx_rx_influence
