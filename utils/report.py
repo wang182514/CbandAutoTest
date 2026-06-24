@@ -140,7 +140,7 @@ class ReportGenerator:
             (2, 6, 3, F(d, "gain_flatness_db", "dB")),
             (2, 7, 3, "<2"),
             (2, 8, 3, "\n".join(
-                f"{PV(d, 'rx_pn_spots', l)}" for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
+                f"{PV(d, 'rx_pn_spots', l)}@{l}" for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
             )),
             (2, 9, 6, F(d, "tx_peak_current_a", "A")),
             (2, 11, 5, FI(d, "tx_gain_db", 0, "dB")),
@@ -153,7 +153,7 @@ class ReportGenerator:
             (2, 18, 3, F(d, "tx_flatness_db", "dB")),
             (2, 19, 3, "<2"),
             (2, 20, 3, "\n".join(
-                f"{PV(d, 'tx_pn_spots', l)}" for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
+                f"{PV(d, 'tx_pn_spots', l)}@{l}" for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
             )),
         ]
 
