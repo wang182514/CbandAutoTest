@@ -9,7 +9,7 @@ from .base import TestBase, TestResult
 from .plugin import register_test
 
 
-@register_test(id="rx_nf", name="RX 噪声系数 + 增益", category="rx", order=1)
+@register_test(id="rx_nf", name="RX 噪声系数 + 增益", category="rx", order=1, include_in_run_all=False)
 def run_rx_nf(base: TestBase) -> TestResult:
     result = TestResult(test_name="RX NF & Gain & Flatness")
     cfg = base.cfg.test_rx_nf

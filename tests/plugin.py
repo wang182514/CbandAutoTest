@@ -24,6 +24,7 @@ def register_test(
     category: str = "general",
     order: int = 0,
     requires: list[str] | None = None,
+    include_in_run_all: bool = True,
 ) -> Callable:
     """
     Decorator — registers a test function into the global plugin registry.
@@ -37,9 +38,12 @@ def register_test(
     category : str
         Grouping key for the UI button layout ("rx" / "tx" / "general").
     order : int
-        Sort order within a category (lower = earlier).
+        Sort order (lower = earlier); used for button layout and run-all sequence.
     requires : list[str] | None
         Optional IDs of prerequisite tests; not yet enforced by the runner.
+    include_in_run_all : bool
+        If False, this test is excluded when the user clicks "Run All".
+        Individual test button still works normally.
     """
 
     def decorator(fn: Callable):
@@ -49,6 +53,7 @@ def register_test(
             "category": category,
             "order": order,
             "requires": requires or [],
+            "include_in_run_all": include_in_run_all,
             "runner": fn,
         }
         return fn

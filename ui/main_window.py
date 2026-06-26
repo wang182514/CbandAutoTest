@@ -470,7 +470,9 @@ class MainWindow(QMainWindow):
         self._reset_button_styles()
 
         from ui.test_runner import TEST_REGISTRY
-        all_tests = list(TEST_REGISTRY.keys())
+        # Run-all: exclude tests marked include_in_run_all=False, sorted by order
+        sorted_tests = sorted(TEST_REGISTRY.items(), key=lambda x: x[1].get("order", 0))
+        all_tests = [tid for tid, info in sorted_tests if info.get("include_in_run_all", True)]
         to_run = test_names if test_names else all_tests
 
         self._runner = TestRunner(
