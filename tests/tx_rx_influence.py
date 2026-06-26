@@ -27,6 +27,8 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
         noise_on_list = []
 
         for kk in range(len(tx_if_freqs)):
+            if base.stop_requested:
+                break
             rx_freq = rx_if_freqs[kk]
             tx_freq = tx_if_freqs[kk]
 
@@ -78,6 +80,8 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
             base.tx_pwr.set_output(True)
             base.log.info("  等待发射稳定...")
             for jj in range(10, 0, -1):
+                if base.stop_requested:
+                    break
                 time.sleep(1)
                 base.log.info(f"    {jj}s")
 
@@ -134,5 +138,7 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
 
     finally:
         base.sa.clear_markers()
+        if base.stop_requested:
+            base.safe_shutdown()
 
     return result

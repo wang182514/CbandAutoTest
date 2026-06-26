@@ -43,6 +43,35 @@ class TestBase:
         self.switch = switch
         self.cfg = config
         self.log = logger or _SimpleLogger()
+        self._stop_flag: callable = lambda: False
+
+    # ---- stop control ------------------------------------------------------
+
+    def set_stop_check(self, fn: callable):
+        """Accept a callback that returns True when stop is requested."""
+        self._stop_flag = fn or (lambda: False)
+
+    @property
+    def stop_requested(self) -> bool:
+        return self._stop_flag()
+
+    def safe_shutdown(self):
+        """Emergency instrument shutdown — safe to call at any time."""
+        for obj, action in [
+            (self.vsg, "rf_off"),
+            (self.rx_pwr, "off"),
+            (self.tx_pwr, "off"),
+        ]:
+            if obj is None:
+                continue
+            try:
+                if action == "rf_off":
+                    obj.rf_off()
+                    obj.set_cw_mode()
+                else:
+                    obj.set_output(False)
+            except Exception:
+                pass
 
     # ---- helpers -----------------------------------------------------------
 

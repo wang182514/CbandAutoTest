@@ -70,6 +70,8 @@ def run_tx_flatness_pn(base: TestBase) -> TestResult:
         # ---- wait for max hold ----
         wait_sec = sa_f.max_hold_wait_sec
         for kk in range(wait_sec, 0, -1):
+            if base.stop_requested:
+                break
             time.sleep(1)
             base.log.info(f"  Max Hold 等待中... {kk}s")
 
@@ -172,5 +174,7 @@ def run_tx_flatness_pn(base: TestBase) -> TestResult:
 
     finally:
         base.sa.clear_markers()
+        if base.stop_requested:
+            base.safe_shutdown()
 
     return result

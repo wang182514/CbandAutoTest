@@ -46,6 +46,7 @@ class TestRunner(QThread):
             config=self._config,
             logger=_SignalLogger(self.log_signal),
         )
+        base.set_stop_check(lambda: self._stop_requested)
 
         all_results = []
         total = len(self._test_names)

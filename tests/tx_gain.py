@@ -53,6 +53,8 @@ def run_tx_gain(base: TestBase) -> TestResult:
         currents = []
 
         for kk, if_freq in enumerate(test_freqs):
+            if base.stop_requested:
+                break
             rf_freq_mhz = if_freq + rf_offset
             rf_freq_ghz = rf_freq_mhz / 1000.0
 
@@ -144,5 +146,7 @@ def run_tx_gain(base: TestBase) -> TestResult:
 
     finally:
         base.sa.clear_markers()
+        if base.stop_requested:
+            base.safe_shutdown()
 
     return result

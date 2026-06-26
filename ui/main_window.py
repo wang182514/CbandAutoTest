@@ -500,6 +500,25 @@ class MainWindow(QMainWindow):
         if self._runner and self._runner.isRunning():
             self._runner.request_stop()
             self._status.showMessage("正在停止...")
+        self._safe_stop_instruments()
+
+    def _safe_stop_instruments(self):
+        """Immediately shut off RF and power for safety (called on stop)."""
+        for obj, name in [
+            (self._vsg, "VSG RF"),
+            (self._rx_pwr, "RX 电源"),
+            (self._tx_pwr, "TX 电源"),
+        ]:
+            if obj is None:
+                continue
+            try:
+                if name == "VSG RF":
+                    obj.rf_off()
+                    obj.set_cw_mode()
+                else:
+                    obj.set_output(False)
+            except Exception:
+                pass
 
     def _on_test_result(self, test_name: str, passed: bool, messages: list):
         self._results_panel.set_result(test_name, passed, messages, {})

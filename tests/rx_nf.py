@@ -129,5 +129,7 @@ def run_rx_nf(base: TestBase) -> TestResult:
 
     finally:
         base.sa.clear_markers()
+        if base.stop_requested:
+            base.safe_shutdown()
 
     return result
