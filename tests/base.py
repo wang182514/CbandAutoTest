@@ -3,6 +3,7 @@ Base class for all test modules.
 Provides instrument references, logging, screenshot helper, and result dict.
 """
 
+import os
 import time
 from typing import Any, Dict
 from dataclasses import dataclass, field
@@ -76,12 +77,14 @@ class TestBase:
     # ---- helpers -----------------------------------------------------------
 
     def screenshot(self, local_filename: str) -> str | None:
-        """Capture SA screenshot if enabled."""
+        """Capture SA screenshot if enabled.  Saved under per-SN subfolder."""
         if not self.cfg.screenshot.enabled:
             return None
         try:
+            sn = self.cfg.get("serial_number", "UNKNOWN")
+            local_dir = self.cfg.get("screenshot.local_dir", "output/screenshots")
             path = self.sa.screenshot(
-                local_dir=self.cfg.get("screenshot.local_dir", "output/screenshots"),
+                local_dir=os.path.join(local_dir, sn),
                 local_filename=local_filename,
                 theme=self.cfg.screenshot.theme,
                 internal_path=self.cfg.screenshot.instrument_internal_path,
