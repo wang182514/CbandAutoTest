@@ -269,19 +269,18 @@ class ResultsPanel(QWidget):
         <style>
             body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px; }
             h3 { margin: 8px 0 6px 0; color: #333; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #ccc; padding: 5px 8px; text-align: center; }
-            th { background-color: #f2f2f2; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
+            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            .agg-row td { background-color: #f9f9f9; font-weight: bold; font-size: 12px; }
             .pass { color: #2e7d32; font-weight: bold; }
             .fail { color: #c62828; font-weight: bold; }
-            .summary { margin: 8px 0; color: #555; }
         </style>
         """
 
     def _build_detail_html(self, name: str, r: Dict[str, Any]) -> str:
         passed = r["passed"]
         data = r.get("data", {})
-        messages = r.get("messages", [])
         status = "PASS" if passed else "FAIL"
         status_class = "pass" if passed else "fail"
 
@@ -290,16 +289,15 @@ class ResultsPanel(QWidget):
             self._style(),
             "</head><body>",
             f"<h3>{name} <span class='{status_class}'>{status}</span></h3>",
-            f"<p class='summary'>测试时间: {r.get('time', '--:--:--')}</p>",
+            f"<p style='color:#888;font-size:12px;'>测试时间: {r.get('time', '--:--:--')}</p>",
+            self._detail_section(name, data),
+            "</body></html>",
         ]
-        html.append(self._detail_section(name, data))
-        if messages:
-            html.append("<h3>判定详情</h3><ul>")
-            for msg in messages:
-                html.append(f"<li>{self._escape(msg)}</li>")
-            html.append("</ul>")
-        html.append("</body></html>")
         return "\n".join(html)
+
+    @staticmethod
+    def _badge(ok: bool) -> str:
+        return '<span class="pass">✓</span>' if ok else '<span class="fail">✗</span>'
 
     def _detail_section(self, name: str, data: Dict[str, Any]) -> str:
         if name == "RX 噪声系数 + 增益":
@@ -316,106 +314,167 @@ class ResultsPanel(QWidget):
 
     @staticmethod
     def _rx_nf_html(data: Dict[str, Any]) -> str:
+        B = ResultsPanel._badge
         freqs = data.get("nf_freqs", [])
         nf = data.get("nf_list", [])
         gain = data.get("gain_list", [])
         rows = []
         for i, f in enumerate(freqs):
-            nf_val = f"{nf[i]:.3f}" if i < len(nf) else "—"
-            gain_val = f"{gain[i]:.3f}" if i < len(gain) else "—"
-            rows.append(f"<tr><td>{f:.2f}</td><td>{nf_val}</td><td>{gain_val}</td></tr>")
+            nv = f"{nf[i]:.3f}" if i < len(nf) else "—"
+            gv = f"{gain[i]:.3f}" if i < len(gain) else "—"
+            rows.append(f"<tr><td>{f:.2f}</td><td>{nv}</td><td>{gv}</td></tr>")
+
+        nf_max = data.get("nf_max_db", 0)
+        nf_mean = data.get("nf_mean_db", 0)
+        g_mean = data.get("gain_mean_db", 0)
+        g_flat = data.get("gain_flatness_db", 0)
+        agg = (
+            f"<tr class='agg-row'><td>NF 最大值</td>"
+            f"<td>{nf_max:.3f}</td><td>≤ 1.30</td><td>{B(nf_max <= 1.3)}</td></tr>"
+            f"<tr class='agg-row'><td>NF 平均值</td>"
+            f"<td>{nf_mean:.3f}</td><td>&lt; 1.20</td><td>{B(nf_mean < 1.2)}</td></tr>"
+            f"<tr class='agg-row'><td>增益平均值</td>"
+            f"<td>{g_mean:.3f}</td><td>&gt; 50.0</td><td>{B(g_mean > 50)}</td></tr>"
+            f"<tr class='agg-row'><td>增益平坦度</td>"
+            f"<td>{g_flat:.3f}</td><td>&lt; 2.50</td><td>{B(g_flat < 2.5)}</td></tr>"
+        )
         return (
             "<h3>RX 噪声系数与增益</h3>"
             "<table><tr><th>频率 (GHz)</th><th>NF (dB)</th><th>Gain (dB)</th></tr>"
-            + "".join(rows) + "</table>"
-            f"<p class='summary'>NF最大值: {data.get('nf_max_db', '—'):.3f} dB | "
-            f"NF平均值: {data.get('nf_mean_db', '—'):.3f} dB | "
-            f"增益平均值: {data.get('gain_mean_db', '—'):.3f} dB | "
-            f"增益平坦度: {data.get('gain_flatness_db', '—'):.3f} dB</p>"
+            + "".join(rows)
+            + "<tr><td colspan='3' style='border:none;'></td></tr>"
+            + agg + "</table>"
         )
 
     @staticmethod
     def _rx_pn_html(data: Dict[str, Any]) -> str:
+        B = ResultsPanel._badge
+        limits = {"100Hz": -65.0, "1KHz": -74.0, "10KHz": -80.0, "100KHz": -95.0}
         spots = data.get("rx_pn_spots", {})
         rows = []
         for label in ["100Hz", "1KHz", "10KHz", "100KHz"]:
             entry = spots.get(label, {})
-            val = entry.get("pn_dbc_hz", None)
-            offset = entry.get("offset_hz", None)
-            val_str = f"{val:.3f}" if val is not None else "—"
-            offset_str = f"{offset / 1000:.1f} kHz" if offset is not None else label
-            rows.append(f"<tr><td>{offset_str}</td><td>{val_str}</td></tr>")
-        current = data.get("rx_current_a", None)
-        current_str = f"{current:.3f} A" if current is not None else "—"
+            val = entry.get("pn_dbc_hz")
+            offset = entry.get("offset_hz")
+            v_str = f"{val:.3f}" if val is not None else "—"
+            o_str = f"{offset / 1000:.1f} kHz" if offset is not None else label
+            lim = limits[label]
+            ok = val is not None and val < lim
+            rows.append(
+                f"<tr><td>{o_str}</td><td>{v_str}</td>"
+                f"<td>&lt; {lim:.1f}</td><td>{B(ok)}</td></tr>"
+            )
+        current = data.get("rx_current_a")
+        c_str = f"{current:.3f} A" if current is not None else "—"
         return (
             "<h3>RX 相位噪声</h3>"
-            "<table><tr><th>偏移</th><th>相位噪声 (dBc/Hz)</th></tr>"
+            "<table><tr><th>偏移</th><th>PN (dBc/Hz)</th><th>限值</th><th></th></tr>"
             + "".join(rows) + "</table>"
-            f"<p class='summary'>接收电流: {current_str}</p>"
+            f"<p>接收电流: {c_str}</p>"
         )
 
     @staticmethod
     def _tx_gain_html(data: Dict[str, Any]) -> str:
+        B = ResultsPanel._badge
+        P_MIN, G_MIN = 32.8, 47.0
         freqs = data.get("tx_freqs_mhz", [])
         pout = data.get("tx_pout_dbm", [])
         gain = data.get("tx_gain_db", [])
         current = data.get("tx_current_a", [])
         rows = []
         for i, f in enumerate(freqs):
-            p = f"{pout[i]:.2f}" if i < len(pout) else "—"
-            g = f"{gain[i]:.2f}" if i < len(gain) else "—"
-            c = f"{current[i]:.3f}" if i < len(current) else "—"
-            rows.append(f"<tr><td>{f}</td><td>{p}</td><td>{g}</td><td>{c}</td></tr>")
-        peak = data.get("tx_peak_current_a", None)
-        peak_str = f"{peak:.3f} A" if peak is not None else "—"
+            p = pout[i] if i < len(pout) else None
+            g = gain[i] if i < len(gain) else None
+            c = current[i] if i < len(current) else None
+            rows.append(
+                "<tr><td>" + str(f) + "</td>"
+                + ("<td>" + f"{p:.2f}" + "</td>" if p is not None else "<td>—</td>")
+                + "<td>≥ " + f"{P_MIN:.1f}" + "</td>"
+                + "<td>" + B(p is not None and p >= P_MIN) + "</td>"
+                + ("<td>" + f"{g:.2f}" + "</td>" if g is not None else "<td>—</td>")
+                + "<td>≥ " + f"{G_MIN:.1f}" + "</td>"
+                + "<td>" + B(g is not None and g >= G_MIN) + "</td>"
+                + ("<td>" + f"{c:.3f}" + "</td>" if c is not None else "<td>—</td>")
+                + "</tr>"
+            )
+        peak = data.get("tx_peak_current_a")
+        p_str = f"{peak:.3f} A" if peak is not None else "—"
         return (
             "<h3>TX 增益与输出功率</h3>"
-            "<table><tr><th>IF (MHz)</th><th>Pout (dBm)</th><th>Gain (dB)</th><th>电流 (A)</th></tr>"
+            "<table><tr><th>IF (MHz)</th><th>Pout (dBm)</th><th>限值</th><th></th>"
+            "<th>Gain (dB)</th><th>限值</th><th></th><th>电流 (A)</th></tr>"
             + "".join(rows) + "</table>"
-            f"<p class='summary'>峰值电流: {peak_str}</p>"
+            f"<p>峰值电流: {p_str}</p>"
         )
 
     @staticmethod
     def _tx_flatness_pn_html(data: Dict[str, Any]) -> str:
-        flatness = data.get("tx_flatness_db", None)
-        flat_str = f"{flatness:.3f} dB" if flatness is not None else "—"
+        B = ResultsPanel._badge
+        flatness = data.get("tx_flatness_db")
+        f_val = f"{flatness:.3f}" if flatness is not None else "—"
+        f_ok = flatness is not None and flatness < 3.0
+        flat_row = (
+            f"<tr><td>发射平坦度</td><td>{f_val} dB</td>"
+            f"<td>&lt; 3.00</td><td>{B(f_ok)}</td></tr>"
+        )
+
+        limits = {"100Hz": -65.0, "1KHz": -74.0, "10KHz": -80.0, "100KHz": -95.0}
         spots = data.get("tx_pn_spots", {})
-        rows = []
+        pn_rows = []
         for label in ["100Hz", "1KHz", "10KHz", "100KHz"]:
             entry = spots.get(label, {})
-            val = entry.get("pn_dbc_hz", None)
-            offset = entry.get("offset_hz", None)
-            val_str = f"{val:.3f}" if val is not None else "—"
-            offset_str = f"{offset / 1000:.1f} kHz" if offset is not None else label
-            rows.append(f"<tr><td>{offset_str}</td><td>{val_str}</td></tr>")
+            val = entry.get("pn_dbc_hz")
+            offset = entry.get("offset_hz")
+            v_str = f"{val:.3f}" if val is not None else "—"
+            o_str = f"{offset / 1000:.1f} kHz" if offset is not None else label
+            lim = limits[label]
+            ok = val is not None and val < lim
+            pn_rows.append(
+                f"<tr><td>{o_str}</td><td>{v_str}</td>"
+                f"<td>&lt; {lim:.1f}</td><td>{B(ok)}</td></tr>"
+            )
         return (
             "<h3>TX 平坦度</h3>"
-            f"<p class='summary'>发射平坦度: {flat_str}</p>"
+            "<table><tr><th>指标</th><th>值</th><th>限值</th><th></th></tr>"
+            + flat_row + "</table>"
             "<h3>TX 相位噪声</h3>"
-            "<table><tr><th>偏移</th><th>相位噪声 (dBc/Hz)</th></tr>"
-            + "".join(rows) + "</table>"
+            "<table><tr><th>偏移</th><th>PN (dBc/Hz)</th><th>限值</th><th></th></tr>"
+            + "".join(pn_rows) + "</table>"
         )
 
     @staticmethod
     def _tx_rx_influence_html(data: Dict[str, Any]) -> str:
+        B = ResultsPanel._badge
+        LIMIT = 2.0
         rx_freqs = data.get("rx_if_freqs_mhz", [])
         off = data.get("rx_noise_tx_off", [])
         on = data.get("rx_noise_tx_on", [])
         deltas = data.get("noise_deltas", [])
         rows = []
         for i, f in enumerate(rx_freqs):
-            o = f"{off[i]:.3f}" if i < len(off) else "—"
-            n = f"{on[i]:.3f}" if i < len(on) else "—"
-            d = f"{deltas[i]:.3f}" if i < len(deltas) else "—"
-            rows.append(f"<tr><td>{f}</td><td>{o}</td><td>{n}</td><td>{d}</td></tr>")
-        max_delta = data.get("noise_delta_max", None)
-        max_str = f"{max_delta:.3f} dB" if max_delta is not None else "—"
+            o = off[i] if i < len(off) else None
+            n = on[i] if i < len(on) else None
+            d = deltas[i] if i < len(deltas) else None
+            d_ok = d is not None and d <= LIMIT
+            rows.append(
+                "<tr><td>" + str(f) + "</td>"
+                + ("<td>" + f"{o:.3f}" + "</td>" if o is not None else "<td>—</td>")
+                + ("<td>" + f"{n:.3f}" + "</td>" if n is not None else "<td>—</td>")
+                + ("<td>" + f"{d:.3f}" + "</td>" if d is not None else "<td>—</td>")
+                + "<td>≤ " + f"{LIMIT:.1f}" + "</td><td>" + B(d_ok) + "</td></tr>"
+            )
+        max_delta = data.get("noise_delta_max")
+        m_val = f"{max_delta:.3f}" if max_delta is not None else "—"
+        m_ok = max_delta is not None and max_delta <= LIMIT
+        agg = (
+            f"<tr class='agg-row'><td>最大差异</td><td colspan='2'></td>"
+            f"<td>{m_val}</td><td>≤ {LIMIT:.1f}</td><td>{B(m_ok)}</td></tr>"
+        )
         return (
             "<h3>TX-RX 收发干扰</h3>"
-            "<table><tr><th>RX IF (MHz)</th><th>TXOFF 噪底 (dBm/Hz)</th>"
-            "<th>TXON 噪底 (dBm/Hz)</th><th>差异 (dB)</th></tr>"
-            + "".join(rows) + "</table>"
-            f"<p class='summary'>噪底差异最大值: {max_str}</p>"
+            "<table><tr><th>RX IF (MHz)</th><th>TXOFF (dBm/Hz)</th>"
+            "<th>TXON (dBm/Hz)</th><th>差异 (dB)</th><th>限值</th><th></th></tr>"
+            + "".join(rows) + agg + "</table>"
         )
 
     @staticmethod
