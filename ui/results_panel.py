@@ -241,12 +241,17 @@ class ResultsPanel(QWidget):
     def _refresh_cards(self):
         for name, r in self._results.items():
             card = self._cards.get(name)
-            if card:
+            if card is None:
+                continue
+            try:
                 card.set_passed(
                     r["passed"],
                     self._summary_text(name, r["data"]),
                     r.get("stopped", False),
                 )
+            except Exception:
+                # If summary_text crashes (e.g. empty data), at least show the badge
+                card.set_passed(r["passed"], "—", r.get("stopped", False))
 
     def _on_card_clicked(self, name: str):
         self._show_detail(name)
@@ -522,25 +527,29 @@ class ResultsPanel(QWidget):
 
     @staticmethod
     def _summary_text(name: str, data: Dict[str, Any]) -> str:
+        def _fmt(val, unit=""):
+            """Safe float format — returns '—' for non-numeric values."""
+            if not isinstance(val, (int, float)):
+                return "—"
+            return f"{val:.3f}{unit}" if unit else f"{val:.3f}"
+
         if name == "RX 噪声系数 + 增益":
-            return (
-                f"NF均值 {data.get('nf_mean_db', '—'):.3f} dB  |  "
-                f"Gain均值 {data.get('gain_mean_db', '—'):.3f} dB"
-            )
+            return (f"NF均值 {_fmt(data.get('nf_mean_db'))} dB  |  "
+                    f"Gain均值 {_fmt(data.get('gain_mean_db'))} dB")
         if name == "RX 相位噪声":
             spots = data.get("rx_pn_spots", {})
             val = spots.get("1KHz", {}).get("pn_dbc_hz")
-            return f"1KHz PN {val:.2f} dBc/Hz" if val is not None else "—"
+            return f"1KHz PN {_fmt(val)} dBc/Hz" if isinstance(val, (int, float)) else "—"
         if name == "TX 增益 + 输出功率":
             pout = data.get("tx_pout_dbm", [])
             avg = sum(pout) / len(pout) if pout else None
-            return f"平均 Pout {avg:.2f} dBm" if avg is not None else "—"
+            return f"平均 Pout {_fmt(avg)} dBm" if isinstance(avg, (int, float)) else "—"
         if name == "TX 平坦度 + 相位噪声":
-            flat = data.get("tx_flatness_db", None)
-            return f"平坦度 {flat:.3f} dB" if flat is not None else "—"
+            flat = data.get("tx_flatness_db")
+            return f"平坦度 {_fmt(flat)} dB" if isinstance(flat, (int, float)) else "—"
         if name == "收发干扰":
-            delta = data.get("noise_delta_max", None)
-            return f"最大差异 {delta:.3f} dB" if delta is not None else "—"
+            delta = data.get("noise_delta_max")
+            return f"最大差异 {_fmt(delta)} dB" if isinstance(delta, (int, float)) else "—"
         return ""
 
     @staticmethod
