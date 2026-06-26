@@ -4,6 +4,7 @@ PySide6 main window: instrument status, test control, results display.
 
 import json
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -602,11 +603,29 @@ class MainWindow(QMainWindow):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         sn = self.config.get("serial_number", "UNKNOWN")
 
+        # ---- check for existing files ----
+        txt_dir = os.path.join(base_dir, self.config.get("report.txt_output_dir", "output/reports/data"))
+        docx_dir = os.path.join(base_dir, self.config.get("report.docx_output_dir", "output/reports/data"))
+        customer_dir = os.path.join(base_dir, self.config.get("report.docx_customer_dir", "output/reports"))
+        existing = []
+        for d, name in [(txt_dir, f"测试记录_{sn}.txt"),
+                         (docx_dir, f"检验记录_{sn}.docx"),
+                         (customer_dir, f"检验记录_{sn}_toB.docx")]:
+            if os.path.exists(os.path.join(d, name)):
+                existing.append(name)
+        if existing:
+            msg = "以下文件已存在，是否覆盖？\n\n" + "\n".join(f"  • {f}" for f in existing)
+            reply = QMessageBox.question(self, "确认覆盖", msg,
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply != QMessageBox.StandardButton.Yes:
+                self._log("用户取消 — 已有报告未覆盖")
+                return
+
         self._log("=== 写入报告 ===")
 
+        generated_any = False
         try:
             report_gen = ReportGenerator(self.config.data, logger=_UiLogAdapter(self._log))
-            txt_dir = os.path.join(base_dir, self.config.get("report.txt_output_dir", "output/reports/data"))
             txt_path = report_gen.generate_txt(
                 all_results=self._all_results,
                 output_dir=txt_dir,
@@ -614,13 +633,12 @@ class MainWindow(QMainWindow):
             )
             if txt_path:
                 self._log(f"文本报告已生成: {txt_path}")
-                self._status.showMessage(f"报告已写入: {txt_path}")
+                generated_any = True
 
             # DOCX requires Word template
             template = os.path.join(base_dir, "..", self.config.get("report.template_file", "CbandTemplate.docx"))
             if os.path.exists(template):
                 # --- 内部 Word 报告 (真实数据) ---
-                docx_dir = os.path.join(base_dir, self.config.get("report.docx_output_dir", "output/reports/data"))
                 docx_path = report_gen.generate_docx(
                     all_results=self._all_results,
                     output_dir=docx_dir,
@@ -629,11 +647,11 @@ class MainWindow(QMainWindow):
                 )
                 if docx_path:
                     self._log(f"Word 报告已生成: {docx_path}")
+                    generated_any = True
 
                 # --- 客户 Word 报告 (合规数据) ---
                 sanitized = sanitize_results(self._all_results, self.config)
                 customer_sn = f"{sn}_toB"
-                customer_dir = os.path.join(base_dir, self.config.get("report.docx_customer_dir", "output/reports"))
                 docx_customer_path = report_gen.generate_docx(
                     all_results=sanitized,
                     output_dir=customer_dir,
@@ -642,12 +660,39 @@ class MainWindow(QMainWindow):
                 )
                 if docx_customer_path:
                     self._log(f"客户 Word 报告已生成: {docx_customer_path}")
+                    generated_any = True
             else:
                 self._log(f"Word 模板未找到: {template}，跳过 docx 生成")
 
         except Exception as e:
             self._log(f"报告生成失败: {e}")
             QMessageBox.critical(self, "报告错误", f"报告生成失败:\n{e}")
+            return
+
+        # ---- auto-increment SN ----
+        if generated_any:
+            new_sn = self._incr_sn(sn)
+            if new_sn != sn:
+                reply = QMessageBox.question(
+                    self, "SN 自动递增",
+                    f"报告已写入。\n\n当前 SN: {sn}\n建议新 SN: {new_sn}\n\n是否自动更新序列号？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if reply == QMessageBox.StandardButton.Yes:
+                    self._edit_sn.setText(new_sn)
+                    self._save_ui_to_config()
+                    self._log(f"序列号已更新: {sn} → {new_sn}")
+                    self._status.showMessage(f"SN 已更新为 {new_sn}")
+
+    @staticmethod
+    def _incr_sn(sn: str) -> str:
+        """Increment the rightmost contiguous digits in a serial number."""
+        m = re.search(r'(\d+)(\D*)$', sn)
+        if not m:
+            return sn
+        digits, suffix = m.group(1), m.group(2)
+        width = len(digits)
+        return sn[:m.start(1)] + str(int(digits) + 1).zfill(width) + suffix
 
     # ========================================================================
     #  Logging
