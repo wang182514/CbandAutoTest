@@ -126,6 +126,15 @@ def run_tx_flatness_pn(base: TestBase) -> TestResult:
             base.log.info(f"  TX PN {label}: {pn_val:.3f} dBc/Hz (限 {limit_db})")
         result.data["tx_pn_spots"] = pn_data
 
+        # store limits for UI inline display
+        result.data["limits"] = {
+            "flatness_db": cfg.limits.flatness_db,
+            "pn_100Hz": limits.pn_100Hz_dbc_hz,
+            "pn_1KHz": limits.pn_1KHz_dbc_hz,
+            "pn_10KHz": limits.pn_10KHz_dbc_hz,
+            "pn_100KHz": limits.pn_100KHz_dbc_hz,
+        }
+
         # Screenshot
         ss = base.screenshot(f"{base.cfg.serial_number}_TX-PhaseNoise.png")
         if ss:

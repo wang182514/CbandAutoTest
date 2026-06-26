@@ -103,6 +103,12 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
         # ---- evaluate ----
         deltas = [abs(on - off) for on, off in zip(noise_on_list, noise_off_list)]
         result.data["noise_deltas"] = deltas
+
+        # store limits for UI inline display
+        result.data["limits"] = {
+            "noise_floor_delta_db": cfg.limit.noise_floor_delta_db,
+        }
+
         max_delta = float(np.max(deltas))
         result.data["noise_delta_max"] = max_delta
 

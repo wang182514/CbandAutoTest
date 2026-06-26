@@ -67,6 +67,12 @@ def run_rx_pn(base: TestBase) -> TestResult:
         rx_current = base.rx_pwr.measure_current()
         result.data["rx_current_a"] = rx_current
         base.log.info(f"接收电流: {rx_current:.3f} A")
+
+        # store limits for UI inline display
+        result.data["limits"] = {
+            label: info.limit_dbc_hz for label, info in pn_offsets.items()
+        }
+
         base.rx_pwr.set_output(False)
         base.vsg.rf_off()
 

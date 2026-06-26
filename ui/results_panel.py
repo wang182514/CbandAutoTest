@@ -315,6 +315,7 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _rx_nf_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
+        L = data.get("limits", {})
         freqs = data.get("nf_freqs", [])
         nf = data.get("nf_list", [])
         gain = data.get("gain_list", [])
@@ -328,15 +329,19 @@ class ResultsPanel(QWidget):
         nf_mean = data.get("nf_mean_db", 0)
         g_mean = data.get("gain_mean_db", 0)
         g_flat = data.get("gain_flatness_db", 0)
+        lm1 = L.get("nf_max_db", 1.3)
+        lm2 = L.get("nf_mean_db", 1.2)
+        lm3 = L.get("gain_mean_db", 50.0)
+        lm4 = L.get("gain_flatness_db", 2.5)
         agg = (
             f"<tr class='agg-row'><td>NF 最大值</td>"
-            f"<td>{nf_max:.3f}</td><td>≤ 1.30</td><td>{B(nf_max <= 1.3)}</td></tr>"
+            f"<td>{nf_max:.3f}</td><td>≤ {lm1:.2f}</td><td>{B(nf_max <= lm1)}</td></tr>"
             f"<tr class='agg-row'><td>NF 平均值</td>"
-            f"<td>{nf_mean:.3f}</td><td>&lt; 1.20</td><td>{B(nf_mean < 1.2)}</td></tr>"
+            f"<td>{nf_mean:.3f}</td><td>&lt; {lm2:.2f}</td><td>{B(nf_mean < lm2)}</td></tr>"
             f"<tr class='agg-row'><td>增益平均值</td>"
-            f"<td>{g_mean:.3f}</td><td>&gt; 50.0</td><td>{B(g_mean > 50)}</td></tr>"
+            f"<td>{g_mean:.3f}</td><td>&gt; {lm3:.2f}</td><td>{B(g_mean > lm3)}</td></tr>"
             f"<tr class='agg-row'><td>增益平坦度</td>"
-            f"<td>{g_flat:.3f}</td><td>&lt; 2.50</td><td>{B(g_flat < 2.5)}</td></tr>"
+            f"<td>{g_flat:.3f}</td><td>&lt; {lm4:.2f}</td><td>{B(g_flat < lm4)}</td></tr>"
         )
         return (
             "<h3>RX 噪声系数与增益</h3>"
@@ -349,7 +354,11 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _rx_pn_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
-        limits = {"100Hz": -65.0, "1KHz": -74.0, "10KHz": -80.0, "100KHz": -95.0}
+        has_limits = any(k in data.get("limits", {}) for k in ["100Hz", "1KHz"])
+        if has_limits:
+            limits = data["limits"]
+        else:
+            limits = {"100Hz": -65.0, "1KHz": -74.0, "10KHz": -80.0, "100KHz": -95.0}
         spots = data.get("rx_pn_spots", {})
         rows = []
         for label in ["100Hz", "1KHz", "10KHz", "100KHz"]:
@@ -376,7 +385,9 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _tx_gain_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
-        P_MIN, G_MIN = 32.8, 47.0
+        L = data.get("limits", {})
+        P_MIN = L.get("pout_min_dbm", 32.8)
+        G_MIN = L.get("gain_min_db", 47.0)
         freqs = data.get("tx_freqs_mhz", [])
         pout = data.get("tx_pout_dbm", [])
         gain = data.get("tx_gain_db", [])
@@ -410,15 +421,22 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _tx_flatness_pn_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
+        L = data.get("limits", {})
+        flat_limit = L.get("flatness_db", 3.0)
         flatness = data.get("tx_flatness_db")
         f_val = f"{flatness:.3f}" if flatness is not None else "—"
-        f_ok = flatness is not None and flatness < 3.0
+        f_ok = flatness is not None and flatness < flat_limit
         flat_row = (
             f"<tr><td>发射平坦度</td><td>{f_val} dB</td>"
-            f"<td>&lt; 3.00</td><td>{B(f_ok)}</td></tr>"
+            f"<td>&lt; {flat_limit:.2f}</td><td>{B(f_ok)}</td></tr>"
         )
 
-        limits = {"100Hz": -65.0, "1KHz": -74.0, "10KHz": -80.0, "100KHz": -95.0}
+        limits = {
+            "100Hz": L.get("pn_100Hz", -65.0),
+            "1KHz": L.get("pn_1KHz", -74.0),
+            "10KHz": L.get("pn_10KHz", -80.0),
+            "100KHz": L.get("pn_100KHz", -95.0),
+        }
         spots = data.get("tx_pn_spots", {})
         pn_rows = []
         for label in ["100Hz", "1KHz", "10KHz", "100KHz"]:
@@ -445,7 +463,7 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _tx_rx_influence_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
-        LIMIT = 2.0
+        LIMIT = data.get("limits", {}).get("noise_floor_delta_db", 2.0)
         rx_freqs = data.get("rx_if_freqs_mhz", [])
         off = data.get("rx_noise_tx_off", [])
         on = data.get("rx_noise_tx_on", [])

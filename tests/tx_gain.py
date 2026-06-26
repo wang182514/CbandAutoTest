@@ -109,6 +109,13 @@ def run_tx_gain(base: TestBase) -> TestResult:
         gains = [a - vsg_pwr for a in amps]
         result.data["tx_gain_db"] = gains
 
+        # store limits for UI inline display
+        limits = cfg.limits
+        result.data["limits"] = {
+            "pout_min_dbm": limits.pout_min_dbm,
+            "gain_min_db": limits.gain_min_db,
+        }
+
         # ---- evaluate ----
         limits = cfg.limits
         messages = []

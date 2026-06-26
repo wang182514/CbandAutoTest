@@ -106,6 +106,15 @@ def run_rx_nf(base: TestBase) -> TestResult:
         else:
             gain_diff = 0.0
         result.data["gain_flatness_db"] = gain_diff
+
+        # store limits for UI inline display
+        result.data["limits"] = {
+            "nf_max_db": limits.nf_max_db,
+            "nf_mean_db": limits.nf_mean_db,
+            "gain_mean_db": limits.gain_mean_db,
+            "gain_flatness_db": limits.gain_flatness_db,
+        }
+
         ok = gain_diff < limits.gain_flatness_db
         messages.append(f"增益平坦度: {gain_diff:.2f} dB (限 {limits.gain_flatness_db} dB) {'PASS' if ok else 'FAIL'}")
         passed = passed and ok
