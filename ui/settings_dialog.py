@@ -5,7 +5,7 @@ Settings dialog — tabbed editor for ALL configurable parameters.
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QFormLayout,
     QLineEdit, QDoubleSpinBox, QSpinBox, QCheckBox, QPushButton,
-    QGroupBox, QDialogButtonBox, QComboBox, QWidget, QScrollArea,
+    QGroupBox, QDialogButtonBox, QComboBox, QWidget, QScrollArea, QLabel,
 )
 from PySide6.QtCore import Qt
 
