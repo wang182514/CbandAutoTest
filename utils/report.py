@@ -44,10 +44,15 @@ def sanitize_results(all_results: list, config) -> list:
     ]
 
     # ── list metrics (per-frequency) ─────────────────────────────────
+    pout_limits = cfg.test_tx_gain.limits.pout_min_dbm
+    if not isinstance(pout_limits, list):
+        pout_limits = [pout_limits, pout_limits, pout_limits]
+    gain_limits = [p - cfg.test_tx_gain.vsg_power_dbm for p in pout_limits]
+
     list_metrics = [
-        # (list_key,          per-element limit,                             dir,  rule_key)
-        ("tx_pout_dbm",       cfg.test_tx_gain.limits.pout_min_dbm,          "ge", "tx_pout_dbm"),
-        ("tx_gain_db",        cfg.test_tx_gain.limits.gain_min_db,           "ge", "tx_gain_db"),
+        # (list_key,          per-element limits (list),             dir,  rule_key)
+        ("tx_pout_dbm",       pout_limits,                           "ge", "tx_pout_dbm"),
+        ("tx_gain_db",        gain_limits,                           "ge", "tx_gain_db"),
     ]
 
     # ── helpers ──────────────────────────────────────────────────────
@@ -101,13 +106,14 @@ def sanitize_results(all_results: list, config) -> list:
                     _set_nested(data, path, round(random.uniform(rule.random_min, rule.random_max), 2))
 
         # list (per-frequency)
-        for key, limit, direction, rule_key in list_metrics:
+        for key, limits_list, direction, rule_key in list_metrics:
             lst = data.get(key)
             if isinstance(lst, list):
                 rule = getattr(rules, rule_key, None)
                 if rule:
                     for i in range(len(lst)):
-                        if isinstance(lst[i], (int, float)) and _out_of_spec(lst[i], limit, direction):
+                        lim = limits_list[i] if i < len(limits_list) else limits_list[-1]
+                        if isinstance(lst[i], (int, float)) and _out_of_spec(lst[i], lim, direction):
                             lst[i] = round(random.uniform(rule.random_min, rule.random_max), 2)
 
         # override pass/fail and messages for customer report
