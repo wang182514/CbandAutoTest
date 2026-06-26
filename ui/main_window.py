@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
     QStatusBar, QSplitter, QApplication, QScrollArea, QSizePolicy,
 )
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings
 
 from config.config_manager import ConfigManager
 from ui.settings_dialog import SettingsDialog
@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         # ---- UI ----
         self._build_ui()
         self._load_config_to_ui()
+        self._restore_layout()
 
         # ---- runner ----
         self._runner: TestRunner | None = None
@@ -212,13 +213,13 @@ class MainWindow(QMainWindow):
         right.addWidget(grp_log, 1)
 
         # ---- main splitter: left | right ----
-        main_splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_splitter.addWidget(left_scroll)
-        main_splitter.addWidget(right_widget)
-        main_splitter.setSizes([300, 900])
-        main_splitter.setStretchFactor(0, 0)
-        main_splitter.setStretchFactor(1, 1)
-        root.addWidget(main_splitter, 1)
+        self._main_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._main_splitter.addWidget(left_scroll)
+        self._main_splitter.addWidget(right_widget)
+        self._main_splitter.setSizes([300, 900])
+        self._main_splitter.setStretchFactor(0, 0)
+        self._main_splitter.setStretchFactor(1, 1)
+        root.addWidget(self._main_splitter, 1)
 
         # ---- status bar ----
         self._status = QStatusBar()
@@ -417,6 +418,28 @@ class MainWindow(QMainWindow):
         self._log("=== 已断开全部仪表 ===")
         self._status.showMessage("已断开全部仪表")
 
+    # ========================================================================
+    #  Layout persistence
+    # ========================================================================
+
+    def _save_layout(self):
+        s = QSettings("CBand", "AutoTest")
+        s.setValue("window/geometry", self.saveGeometry())
+        s.setValue("window/splitter", self._main_splitter.saveState())
+
+    def _restore_layout(self):
+        s = QSettings("CBand", "AutoTest")
+        geo = s.value("window/geometry")
+        if geo is not None:
+            self.restoreGeometry(geo)
+        splitter_state = s.value("window/splitter")
+        if splitter_state is not None:
+            self._main_splitter.restoreState(splitter_state)
+
+    # ========================================================================
+    #  Window close
+    # ========================================================================
+
     def closeEvent(self, event):
         """Safely stop test thread and disconnect instruments on window close."""
         if self._runner and self._runner.isRunning():
@@ -426,6 +449,7 @@ class MainWindow(QMainWindow):
                 self._runner.terminate()
                 self._runner.wait(2000)
         self._on_disconnect_all()
+        self._save_layout()
         event.accept()
 
     # ========================================================================
