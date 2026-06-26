@@ -145,6 +145,8 @@ class MainWindow(QMainWindow):
         # Individual test buttons — auto-generated from plugin registry
         from ui.test_runner import TEST_REGISTRY
 
+        self._test_buttons: dict[str, QPushButton] = {}  # track for status updates
+
         cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
         groups: dict[str, list] = {}
         for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
@@ -160,10 +162,12 @@ class MainWindow(QMainWindow):
             for info in groups[cat]:
                 tid = info["id"]
                 btn = QPushButton(info["name"])
+                btn.setObjectName(tid)
                 btn.setMaximumWidth(320)
                 btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 btn.clicked.connect(lambda checked, n=tid: self._run_tests([n]))
                 g3.addWidget(btn)
+                self._test_buttons[tid] = btn
 
         self._btn_stop = QPushButton("■ 停止")
         self._btn_stop.clicked.connect(self._on_stop)
@@ -193,6 +197,9 @@ class MainWindow(QMainWindow):
         # Results panel
         self._results_panel = ResultsPanel()
         self._results_panel.setMinimumHeight(200)
+        # Pre-populate card placeholders from registry
+        from ui.test_runner import TEST_REGISTRY
+        self._results_panel.set_test_names([info["name"] for info in TEST_REGISTRY.values()])
         right.addWidget(self._results_panel, 2)
 
         # Log output
@@ -436,6 +443,7 @@ class MainWindow(QMainWindow):
         # Keep previous results visible during this run; they will be
         # overwritten as each test completes. Only clear the log.
         self._log_view.clear()
+        self._reset_button_styles()
 
         from ui.test_runner import TEST_REGISTRY
         all_tests = list(TEST_REGISTRY.keys())
@@ -470,16 +478,38 @@ class MainWindow(QMainWindow):
             self._status.showMessage("正在停止...")
 
     def _on_test_result(self, test_name: str, passed: bool, messages: list):
-        # Find the latest data for this test from accumulated results
-        data = {}
-        for r in self._all_results:
-            if r.get("name") == test_name:
-                data = r.get("data", {})
-                break
-        self._results_panel.set_result(test_name, passed, messages, data)
+        self._results_panel.set_result(test_name, passed, messages, {})
+        self._update_button_status(test_name, passed)
 
     def _on_progress(self, current: int, total: int):
         self._progress.setValue(current)
+
+    def _update_button_status(self, test_name: str, passed: bool):
+        """Color a test button green (PASS) or red (FAIL) based on result."""
+        btn = self._test_buttons.get(test_name)
+        if btn is None:
+            # Look up by display name in registry
+            from ui.test_runner import TEST_REGISTRY
+            for info in TEST_REGISTRY.values():
+                if info["name"] == test_name:
+                    btn = self._test_buttons.get(info["id"])
+                    break
+        if btn is None:
+            return
+        if passed:
+            btn.setStyleSheet(
+                "QPushButton { border-left: 4px solid #4CAF50; padding-left: 8px; }"
+                "QPushButton:hover { border-left-color: #388E3C; }"
+            )
+        else:
+            btn.setStyleSheet(
+                "QPushButton { border-left: 4px solid #F44336; padding-left: 8px; }"
+                "QPushButton:hover { border-left-color: #D32F2F; }"
+            )
+
+    def _reset_button_styles(self):
+        for btn in self._test_buttons.values():
+            btn.setStyleSheet("")
 
     def _on_all_done(self, results: list):
         self._progress.setVisible(False)
@@ -496,14 +526,16 @@ class MainWindow(QMainWindow):
         # Enable report button once we have at least one result
         self._btn_report.setEnabled(len(self._all_results) > 0)
 
-        # Also refresh the results panel with the final accumulated data
+        # Refresh results panel with full data
         for r in self._all_results:
+            name = r.get("name", "")
             self._results_panel.set_result(
-                r.get("name", ""),
+                name,
                 r.get("passed", False),
                 r.get("messages", []),
                 r.get("data", {}),
             )
+            self._update_button_status(name, r.get("passed", False))
 
         # Summary
         total = len(results)

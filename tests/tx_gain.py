@@ -32,7 +32,8 @@ def run_tx_gain(base: TestBase) -> TestResult:
         err = base.sa.check_error()
         if "+0" in err:
             base.log.info("  模板已调用")
-
+            
+        base.log.info(err)
         # ---- turn on TX power ----
         base.tx_pwr.set_output(True)
         time.sleep(1)
