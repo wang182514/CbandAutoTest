@@ -112,22 +112,24 @@ def run_tx_gain(base: TestBase) -> TestResult:
         result.data["tx_gain_db"] = gains
 
         # store limits for UI inline display
-        limits = cfg.limits
+        pout_limits = list(cfg.limits.pout_min_dbm)
+        gain_limits = [p - vsg_pwr for p in pout_limits]
         result.data["limits"] = {
-            "pout_min_dbm": limits.pout_min_dbm,
-            "gain_min_db": limits.gain_min_db,
+            "pout_min_dbm": pout_limits,
+            "gain_min_db": gain_limits,
         }
 
         # ---- evaluate ----
-        limits = cfg.limits
         messages = []
         passed = True
 
         for kk, if_freq in enumerate(test_freqs):
-            ok = amps[kk] >= limits.pout_min_dbm and gains[kk] >= limits.gain_min_db
+            p_ok = amps[kk] >= pout_limits[kk]
+            g_ok = gains[kk] >= gain_limits[kk]
+            ok = p_ok and g_ok
             messages.append(
-                f"TX @{if_freq}MHz: Pout={amps[kk]:.2f}dBm (限≥{limits.pout_min_dbm}), "
-                f"Gain={gains[kk]:.2f}dB (限≥{limits.gain_min_db}) {'PASS' if ok else 'FAIL'}"
+                f"TX @{if_freq}MHz: Pout={amps[kk]:.2f}dBm (限≥{pout_limits[kk]:.2f}), "
+                f"Gain={gains[kk]:.2f}dB (限≥{gain_limits[kk]:.2f}) {'PASS' if ok else 'FAIL'}"
             )
             passed = passed and ok
 

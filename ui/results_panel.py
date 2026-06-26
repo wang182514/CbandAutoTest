@@ -396,8 +396,12 @@ class ResultsPanel(QWidget):
     def _tx_gain_html(data: Dict[str, Any]) -> str:
         B = ResultsPanel._badge
         L = data.get("limits", {})
-        P_MIN = L.get("pout_min_dbm", 32.8)
-        G_MIN = L.get("gain_min_db", 47.0)
+        p_limits = L.get("pout_min_dbm", [32.8, 32.8, 32.8])
+        g_limits = L.get("gain_min_db", [47.0, 47.0, 47.0])
+        if not isinstance(p_limits, list):
+            p_limits = [p_limits, p_limits, p_limits]
+        if not isinstance(g_limits, list):
+            g_limits = [g_limits, g_limits, g_limits]
         freqs = data.get("tx_freqs_mhz", [])
         pout = data.get("tx_pout_dbm", [])
         gain = data.get("tx_gain_db", [])
@@ -407,14 +411,16 @@ class ResultsPanel(QWidget):
             p = pout[i] if i < len(pout) else None
             g = gain[i] if i < len(gain) else None
             c = current[i] if i < len(current) else None
+            pm = p_limits[i] if i < len(p_limits) else 32.8
+            gm = g_limits[i] if i < len(g_limits) else 47.0
             rows.append(
                 "<tr><td>" + str(f) + "</td>"
                 + ("<td>" + f"{p:.2f}" + "</td>" if p is not None else "<td>—</td>")
-                + "<td>≥ " + f"{P_MIN:.1f}" + "</td>"
-                + "<td>" + B(p is not None and p >= P_MIN) + "</td>"
+                + "<td>≥ " + f"{pm:.2f}" + "</td>"
+                + "<td>" + B(p is not None and p >= pm) + "</td>"
                 + ("<td>" + f"{g:.2f}" + "</td>" if g is not None else "<td>—</td>")
-                + "<td>≥ " + f"{G_MIN:.1f}" + "</td>"
-                + "<td>" + B(g is not None and g >= G_MIN) + "</td>"
+                + "<td>≥ " + f"{gm:.2f}" + "</td>"
+                + "<td>" + B(g is not None and g >= gm) + "</td>"
                 + ("<td>" + f"{c:.3f}" + "</td>" if c is not None else "<td>—</td>")
                 + "</tr>"
             )

@@ -165,8 +165,20 @@ class SettingsDialog(QDialog):
         c = self._cfg.data.test_tx_gain
         self._txg_template = self._add_line(l, "模板名称", c.template_name)
         self._txg_vsg_pwr = self._add_double(l, "VSG 功率 (dBm)", c.vsg_power_dbm, -120, 30)
-        self._txg_pout_min = self._add_double(l, "Pout 最小限 (dBm)", c.limits.pout_min_dbm, 0, 60)
-        self._txg_gain_min = self._add_double(l, "Gain 最小限 (dB)", c.limits.gain_min_db, 0, 80)
+
+        # Per-frequency Pout limits
+        pout_vals = list(c.limits.pout_min_dbm) if hasattr(c.limits.pout_min_dbm, '__iter__') else [c.limits.pout_min_dbm] * 3
+        freq_labels = ["1050 MHz", "1200 MHz", "1550 MHz"]
+        self._txg_pout_mins = []
+        for i, f_lbl in enumerate(freq_labels):
+            v = pout_vals[i] if i < len(pout_vals) else 32.8
+            sp = self._add_double(l, f"Pout 最小限 — {f_lbl} (dBm)", v, 0, 60)
+            self._txg_pout_mins.append(sp)
+
+        # Gain limit is auto-calculated; show read-only note
+        self._txg_gain_note = QLabel("Gain 限值 = Pout 限值 − VSG 功率 (自动计算)")
+        self._txg_gain_note.setStyleSheet("color: #888; font-size: 11px;")
+        l.addRow(self._txg_gain_note)
         return w
 
     def _tab_test_tx_flat(self) -> QWidget:
@@ -359,8 +371,7 @@ class SettingsDialog(QDialog):
         # TX Gain
         c.test_tx_gain.template_name = self._txg_template.text()
         c.test_tx_gain.vsg_power_dbm = self._txg_vsg_pwr.value()
-        c.test_tx_gain.limits.pout_min_dbm = self._txg_pout_min.value()
-        c.test_tx_gain.limits.gain_min_db = self._txg_gain_min.value()
+        c.test_tx_gain.limits.pout_min_dbm = [sp.value() for sp in self._txg_pout_mins]
 
         # TX Flatness
         c.test_tx_flatness_pn.flatness_template = self._txf_flat_template.text()

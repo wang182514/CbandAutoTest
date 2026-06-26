@@ -95,8 +95,7 @@
             "ref_level_dbm": 45
         },
         "limits": {
-            "pout_min_dbm": 32.8,
-            "gain_min_db": 47.0
+            "pout_min_dbm": [32.8, 32.8, 32.8]
         }
     },
 
