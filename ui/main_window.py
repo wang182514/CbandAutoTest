@@ -604,9 +604,10 @@ class MainWindow(QMainWindow):
 
         try:
             report_gen = ReportGenerator(self.config.data, logger=_UiLogAdapter(self._log))
+            txt_dir = os.path.join(base_dir, self.config.get("report.txt_output_dir", "output/reports/data"))
             txt_path = report_gen.generate_txt(
                 all_results=self._all_results,
-                output_dir=os.path.join(base_dir, "output", "reports"),
+                output_dir=txt_dir,
                 sn=sn,
             )
             if txt_path:
@@ -617,9 +618,10 @@ class MainWindow(QMainWindow):
             template = os.path.join(base_dir, "..", self.config.get("report.template_file", "CbandTemplate.docx"))
             if os.path.exists(template):
                 # --- 内部 Word 报告 (真实数据) ---
+                docx_dir = os.path.join(base_dir, self.config.get("report.docx_output_dir", "output/reports/data"))
                 docx_path = report_gen.generate_docx(
                     all_results=self._all_results,
-                    output_dir=os.path.join(base_dir, "output", "reports"),
+                    output_dir=docx_dir,
                     sn=sn,
                     template_path=template,
                 )
@@ -629,9 +631,10 @@ class MainWindow(QMainWindow):
                 # --- 客户 Word 报告 (合规数据) ---
                 sanitized = sanitize_results(self._all_results, self.config)
                 customer_sn = f"{sn}_toC"
+                customer_dir = os.path.join(base_dir, self.config.get("report.docx_customer_dir", "output/reports"))
                 docx_customer_path = report_gen.generate_docx(
                     all_results=sanitized,
-                    output_dir=os.path.join(base_dir, "output", "reports"),
+                    output_dir=customer_dir,
                     sn=customer_sn,
                     template_path=template,
                 )

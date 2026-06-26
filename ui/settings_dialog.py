@@ -281,12 +281,18 @@ class SettingsDialog(QDialog):
         self._scr_en.setChecked(c.screenshot.enabled)
         l.addRow("截图:", self._scr_en)
         self._scr_path = self._add_line(l, "仪表截图路径", c.screenshot.instrument_internal_path)
+
+        # Report output paths
         self._rpt_txt = QCheckBox("生成 TXT 报告")
         self._rpt_txt.setChecked(c.report.txt_enabled)
         l.addRow("TXT:", self._rpt_txt)
+        self._rpt_txt_dir = self._add_line(l, "TXT 存储目录", c.get("txt_output_dir", "output/reports/data"))
+
         self._rpt_docx = QCheckBox("生成 DOCX 报告")
         self._rpt_docx.setChecked(c.report.docx_enabled)
         l.addRow("DOCX:", self._rpt_docx)
+        self._rpt_docx_dir = self._add_line(l, "内部 DOCX 目录", c.get("docx_output_dir", "output/reports/data"))
+        self._rpt_customer_dir = self._add_line(l, "客户 DOCX 目录", c.get("docx_customer_dir", "output/reports"))
         self._rpt_template = self._add_line(l, "DOCX 模板", c.report.template_file)
         return w
 
@@ -391,6 +397,9 @@ class SettingsDialog(QDialog):
         c.report.txt_enabled = self._rpt_txt.isChecked()
         c.report.docx_enabled = self._rpt_docx.isChecked()
         c.report.template_file = self._rpt_template.text()
+        c.report.txt_output_dir = self._rpt_txt_dir.text()
+        c.report.docx_output_dir = self._rpt_docx_dir.text()
+        c.report.docx_customer_dir = self._rpt_customer_dir.text()
 
         # Sanitize rules
         c.sanitize.nf_max_db.random_min = self._san_nf_max.value()
