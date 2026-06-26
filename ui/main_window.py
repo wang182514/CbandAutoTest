@@ -521,7 +521,8 @@ class MainWindow(QMainWindow):
                 pass
 
     def _on_test_result(self, test_name: str, passed: bool, messages: list):
-        self._results_panel.set_result(test_name, passed, messages, {})
+        stopped = any("手动终止" in m for m in messages)
+        self._results_panel.set_result(test_name, passed, messages, {}, stopped=stopped)
         self._update_button_status(test_name, passed)
 
     def _on_progress(self, current: int, total: int):
@@ -577,6 +578,7 @@ class MainWindow(QMainWindow):
                 r.get("passed", False),
                 r.get("messages", []),
                 r.get("data", {}),
+                stopped=r.get("stopped", False),
             )
             self._update_button_status(name, r.get("passed", False))
 

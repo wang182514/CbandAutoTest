@@ -157,10 +157,11 @@ class ResultsPanel(QWidget):
     #  Public API
     # ========================================================================
 
-    def set_result(self, test_name: str, passed: bool, messages: List[str], data: Dict[str, Any]):
+    def set_result(self, test_name: str, passed: bool, messages: List[str], data: Dict[str, Any], stopped: bool = False):
         """Add or update a test result."""
         self._results[test_name] = {
             "passed": passed,
+            "stopped": stopped,
             "messages": messages,
             "data": data,
             "time": datetime.now().strftime("%H:%M:%S"),
