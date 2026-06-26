@@ -73,30 +73,40 @@ class TestRunner(QThread):
 
             try:
                 result = runner(base)
+                stopped = self._stop_requested
+                msgs = list(result.messages)
+                if stopped:
+                    msgs.insert(0, "⚠ 手动终止 — 测试未完成")
                 all_results.append({
                     "name": display_name,
-                    "passed": result.passed,
-                    "messages": result.messages,
+                    "passed": result.passed and not stopped,
+                    "stopped": stopped,
+                    "messages": msgs,
                     "data": result.data,
                     "screenshots": result.screenshots,
                 })
-                self.result_signal.emit(display_name, result.passed, result.messages)
+                self.result_signal.emit(display_name, result.passed and not stopped, msgs)
 
-                if result.passed:
+                if stopped:
+                    self.log_signal.emit(f"⊘ {display_name} 已终止")
+                elif result.passed:
                     self.log_signal.emit(f"✓ {display_name} PASS")
                 else:
                     self.log_signal.emit(f"✗ {display_name} FAIL")
 
             except Exception as e:
-                self.log_signal.emit(f"✗ {display_name} 异常: {e}")
+                stopped = self._stop_requested
+                prefix = "⚠ 手动终止 → " if stopped else ""
+                self.log_signal.emit(f"✗ {display_name} {prefix}异常: {e}")
                 all_results.append({
                     "name": display_name,
                     "passed": False,
-                    "messages": [f"异常: {e}"],
+                    "stopped": stopped,
+                    "messages": [f"{prefix}异常: {e}"],
                     "data": {},
                     "screenshots": [],
                 })
-                self.result_signal.emit(display_name, False, [f"异常: {e}"])
+                self.result_signal.emit(display_name, False, [f"{prefix}异常: {e}"])
 
             self.progress_signal.emit(idx + 1, total)
 

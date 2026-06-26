@@ -70,8 +70,10 @@ class _ResultCard(QFrame):
         self._status_lbl.setText("—")
         self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #999;")
 
-    def set_passed(self, passed: bool, metric_text: str = ""):
-        if passed:
+    def set_passed(self, passed: bool, metric_text: str = "", stopped: bool = False):
+        if stopped:
+            clr, bg, badge = "#e65100", "#fff3e0", "⊘  已终止"
+        elif passed:
             clr, bg, badge = "#2e7d32", "#e8f5e9", "✓  PASS"
         else:
             clr, bg, badge = "#c62828", "#ffebee", "✗  FAIL"
@@ -213,8 +215,11 @@ class ResultsPanel(QWidget):
 
         total = len(self._results)
         passed = sum(1 for r in self._results.values() if r["passed"])
+        stopped = sum(1 for r in self._results.values() if r.get("stopped"))
 
-        if passed == total:
+        if stopped > 0:
+            bg, fg, text = "#ffe0b2", "#e65100", f"⊘  {passed}/{total} 通过，{stopped} 项已终止"
+        elif passed == total:
             bg, fg, text = "#c8e6c9", "#2e7d32", f"✓  全部合格 — {passed}/{total} 通过"
         elif passed > 0:
             bg, fg, text = "#fff9c4", "#f57f17", f"⚠  {passed}/{total} 通过，{total - passed} 项不合格"
@@ -236,7 +241,11 @@ class ResultsPanel(QWidget):
         for name, r in self._results.items():
             card = self._cards.get(name)
             if card:
-                card.set_passed(r["passed"], self._summary_text(name, r["data"]))
+                card.set_passed(
+                    r["passed"],
+                    self._summary_text(name, r["data"]),
+                    r.get("stopped", False),
+                )
 
     def _on_card_clicked(self, name: str):
         self._show_detail(name)
