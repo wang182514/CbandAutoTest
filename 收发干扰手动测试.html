@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<style>
+  body { font-family: 'Microsoft YaHei', sans-serif; font-size: 11pt;
+         max-width: 780px; margin: 30px auto; padding: 0 20px; color: #222; line-height: 1.7; }
+  h1 { font-size: 18pt; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  h3 { font-size: 12pt; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  th,td { border: 1px solid #999; padding: 5px 10px; text-align: center; }
+  th { background: #eee; }
+  pre { background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 9pt; white-space: pre-wrap; }
+  code { background: #f0f0f0; padding: 1px 4px; border-radius: 2px; }
+  blockquote { border-left: 3px solid #999; padding-left: 12px; color: #555; margin-left: 0; }
+</style></head><body>
+<h1>C10F004B 收发干扰手动测试</h1>
+<hr />
+<h2>一、测试目的</h2>
+<p>检查发射通道工作时，接收通道是否受到干扰。</p>
+<hr />
+<h2>二、所需设备</h2>
+<table>
+<thead>
+<tr>
+<th>设备</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>信号源（1.05~1.55 GHz）</td>
+<td>模拟发射中频信号</td>
+</tr>
+<tr>
+<td>频谱仪（0.85~1.65 GHz）</td>
+<td>观测接收通道噪底</td>
+</tr>
+<tr>
+<td>10 MHz 参考信号源</td>
+<td>模块时钟参考</td>
+</tr>
+<tr>
+<td>合路器 ×2</td>
+<td>合并 DC、10M 参考与信号</td>
+</tr>
+<tr>
+<td>DC 电源 ×2</td>
+<td>RX（12V）/ TX（24V）供电</td>
+</tr>
+<tr>
+<td>50Ω 匹配负载</td>
+<td>堵 RF 端口</td>
+</tr>
+<tr>
+<td>同轴电缆若干</td>
+<td>设备互联</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>三、接线</h2>
+<h3>发射通道（TX IF 口）</h3>
+<pre><code>信号源 1.05GHz −14dBm ──→ 合路器（IF口） 
+10M 参考 ──────────────→  合路器（10M口）合路器输出 ──→ 模块 TX IF 口
+DC 24V   ──────────────→ 合路器
+</code></pre>
+<blockquote>
+<p>信号源先设好频率和功率，RF 输出暂<strong>关闭</strong>。</p>
+</blockquote>
+<h3>接收通道（RX IF 口）</h3>
+<pre><code>频谱仪   ←──── 合路器（IF口）
+10M 参考 ────→ 合路器（10M口）────→ 模块 RX IF 口
+DC 12V  ────→  合路器
+</code></pre>
+<h3>RF 端口</h3>
+<table>
+<thead>
+<tr>
+<th>端口</th>
+<th>连接</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RF IN</td>
+<td>50Ω 匹配负载</td>
+</tr>
+<tr>
+<td>RF OUT</td>
+<td>50Ω 匹配负载（或不接）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>四、测试步骤</h2>
+<h3>4.1 频谱仪设置</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>设置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>起始频率</td>
+<td>0.85 GHz</td>
+</tr>
+<tr>
+<td>终止频率</td>
+<td>1.65 GHz</td>
+</tr>
+<tr>
+<td>参考电平</td>
+<td>−30 dBm左右</td>
+</tr>
+<tr>
+<td>RBW</td>
+<td>100 KHz左右</td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 未开发射时检查</h3>
+<ol>
+<li>先开 10M 参考，确认模块指示灯常亮(正常工作)</li>
+<li>给 RX 上电（12V），TX 上电（24V）</li>
+<li>信号源 RF 保持关闭</li>
+<li>观察频谱仪噪底，应在 -70到-50 dBm 之间，无明显尖刺</li>
+</ol>
+<h3>4.3 开发射扫频</h3>
+<ol>
+<li>信号源打开 RF 输出（−14 dBm）手动转动调节旋钮调节频率</li>
+<li>频谱仪上观察底噪有无异常尖峰</li>
+</ol>
+<hr />
+<h2>五、判定</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全程噪底平坦，无尖刺</td>
+<td>合格</td>
+</tr>
+<tr>
+<td>某频率出现明显尖峰</td>
+<td>不合格，记录频率和幅度</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>六、注意事项</h2>
+<ol>
+<li>先接好全部线缆，最后通电</li>
+<li>10M 参考须先于 DC 供电接入，确认指示灯常亮后再上电</li>
+<li>RX IF（12V）与 TX IF（24V）供电电压不同，不可接反</li>
+<li>信号源输出功率不超过 −10 dBm</li>
+</ol>
+</body></html>
