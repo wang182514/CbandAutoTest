@@ -19,6 +19,9 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
     cfg = base.cfg.test_rx_nf_v2
 
     try:
+        # ---- enable SCPI debug for troubleshooting ----
+        base.sa.enable_debug(base.log.info)
+
         # ---- load NF template (extended 0.95-1.55 GHz) ----
         base.log.info("加载噪声系数模板 (state_RX_NF2.state)...")
         base.sa.set_mode_nf()
