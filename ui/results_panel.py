@@ -170,6 +170,7 @@ class ResultsPanel(QWidget):
         }
         self._refresh_cards()
         self._update_banner()
+        self._update_button_state()
         self._show_detail(test_name)
 
     def clear_results(self):
