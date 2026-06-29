@@ -19,15 +19,15 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
     cfg = base.cfg.test_rx_nf_v2
 
     try:
-        # ---- enable SCPI debug for troubleshooting ----
-        base.sa.enable_debug(base.log.info)
-
         # ---- load NF template (extended 0.95-1.55 GHz) ----
         base.log.info("加载噪声系数模板 (state_RX_NF2.state)...")
+        base.log.info(f"  [SA] :INST:SEL NFIGURE")
         base.sa.set_mode_nf()
         time.sleep(1)
+        base.log.info(f'  [SA] :MMEM:LOAD:STAT "{cfg.template_name}"')
         base.sa.load_state(cfg.template_name)
         err = base.sa.check_error()
+        base.log.info(f"  [SA] :SYST:ERR? → {err}")
         if "+0" in err:
             base.log.info("  模板已调用")
         else:
@@ -45,9 +45,11 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
 
         # ---- single-shot measurement ----
         base.log.info("正在启动单次测量...")
+        base.log.info("  [SA] :INIT:CONT ON → :INIT:IMM → *OPC?")
         base.sa.nf_init_measurement()
         base.log.info("  测量完成")
 
+        base.log.info("  [SA] :CALC:NFIG:MARK:COUP OFF → :CALC:NFIG:MARK:AOFF")
         base.sa.nf_prepare_markers()
 
         # ---- read NF & Gain at all 13 frequency points ----

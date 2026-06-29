@@ -33,23 +33,13 @@ class SpectrumAnalyzer:
         idn = self._inst.query("*IDN?").strip()
         return idn
 
-    def enable_debug(self, log_fn):
-        """Log every SCPI write and query through *log_fn(msg)* (for troubleshooting)."""
-        raw_write = self._inst.write
-        raw_query = self._inst.query
+    def scpi_write(self, cmd: str):
+        """Write a SCPI command (thin wrapper for logging / future extension)."""
+        self._inst.write(cmd)
 
-        def _dbg_write(cmd):
-            log_fn(f"[SA WRITE] {cmd}")
-            raw_write(cmd)
-
-        def _dbg_query(cmd):
-            log_fn(f"[SA QUERY] {cmd}")
-            result = raw_query(cmd)
-            log_fn(f"[SA RESP]  {str(result).strip()}")
-            return result
-
-        self._inst.write = _dbg_write
-        self._inst.query = _dbg_query
+    def scpi_query(self, cmd: str) -> str:
+        """Query a SCPI command and return the response."""
+        return self._inst.query(cmd)
 
     def disconnect(self):
         if self._inst:
