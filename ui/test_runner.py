@@ -12,7 +12,7 @@ TEST_REGISTRY = discover()
 
 class TestRunner(QThread):
     log_signal = Signal(str)
-    result_signal = Signal(str, bool, list)     # test_name, passed, messages
+    result_signal = Signal(str, bool, list, dict)  # test_name, passed, messages, data
     progress_signal = Signal(int, int)          # current, total
     finished_signal = Signal(list)              # all_results
 
@@ -85,7 +85,7 @@ class TestRunner(QThread):
                     "data": result.data,
                     "screenshots": result.screenshots,
                 })
-                self.result_signal.emit(display_name, result.passed and not stopped, msgs)
+                self.result_signal.emit(display_name, result.passed and not stopped, msgs, result.data)
 
                 if stopped:
                     self.log_signal.emit(f"⊘ {display_name} 已终止")
@@ -106,7 +106,7 @@ class TestRunner(QThread):
                     "data": {},
                     "screenshots": [],
                 })
-                self.result_signal.emit(display_name, False, [f"{prefix}异常: {e}"])
+                self.result_signal.emit(display_name, False, [f"{prefix}异常: {e}"], {})
 
             self.progress_signal.emit(idx + 1, total)
 

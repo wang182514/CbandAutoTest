@@ -524,9 +524,11 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
-    def _on_test_result(self, test_name: str, passed: bool, messages: list):
+    def _on_test_result(self, test_name: str, passed: bool, messages: list, data: dict = None):
+        if data is None:
+            data = {}
         stopped = any("手动终止" in m for m in messages)
-        self._results_panel.set_result(test_name, passed, messages, {}, stopped=stopped)
+        self._results_panel.set_result(test_name, passed, messages, data, stopped=stopped)
         self._update_button_status(test_name, passed)
 
     def _on_progress(self, current: int, total: int):
