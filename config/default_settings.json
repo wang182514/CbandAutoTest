@@ -162,7 +162,6 @@
         "rx_pn_10KHz":        { "random_min": -81.4, "random_max": -80.1 },
         "rx_pn_100KHz":       { "random_min": -96.8, "random_max": -95.1 },
         "tx_pout_dbm":        { "random_min": 32.80, "random_max": 33.30 },
-        "tx_gain_db":         { "random_min": 47.00, "random_max": 47.80 },
         "tx_flatness_db":     { "random_min": 1.30, "random_max": 1.90 },
         "tx_pn_100Hz":        { "random_min": -66.0, "random_max": -65.1 },
         "tx_pn_1KHz":         { "random_min": -75.2, "random_max": -74.1 },

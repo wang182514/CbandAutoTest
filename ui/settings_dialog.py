@@ -244,8 +244,9 @@ class SettingsDialog(QDialog):
         g3 = QFormLayout(grp_txg)
         self._san_txpout = self._add_double(g3, "TX Pout — random_min", c.tx_pout_dbm.random_min, 0, 60)
         self._san_txpout_max = self._add_double(g3, "TX Pout — random_max", c.tx_pout_dbm.random_max, 0, 60)
-        self._san_txgain = self._add_double(g3, "TX Gain — random_min", c.tx_gain_db.random_min, 0, 80)
-        self._san_txgain_max = self._add_double(g3, "TX Gain — random_max", c.tx_gain_db.random_max, 0, 80)
+        txg_note = QLabel("TX Gain 随机范围 = Pout 随机范围 − VSG 功率（自动计算）")
+        txg_note.setStyleSheet("color: #888; font-size: 11px;")
+        g3.addRow(txg_note)
         l.addRow(grp_txg)
 
         # ---- TX Flatness / PN ----
@@ -422,8 +423,6 @@ class SettingsDialog(QDialog):
 
         c.sanitize.tx_pout_dbm.random_min = self._san_txpout.value()
         c.sanitize.tx_pout_dbm.random_max = self._san_txpout_max.value()
-        c.sanitize.tx_gain_db.random_min = self._san_txgain.value()
-        c.sanitize.tx_gain_db.random_max = self._san_txgain_max.value()
 
         c.sanitize.tx_flatness_db.random_min = self._san_txflat.value()
         c.sanitize.tx_flatness_db.random_max = self._san_txflat_max.value()

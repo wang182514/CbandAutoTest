@@ -48,11 +48,12 @@ def sanitize_results(all_results: list, config) -> list:
     if not isinstance(pout_limits, list):
         pout_limits = [pout_limits, pout_limits, pout_limits]
     gain_limits = [p - cfg.test_tx_gain.vsg_power_dbm for p in pout_limits]
+    vsg_pwr = cfg.test_tx_gain.vsg_power_dbm
 
     list_metrics = [
         # (list_key,          per-element limits (list),             dir,  rule_key)
         ("tx_pout_dbm",       pout_limits,                           "ge", "tx_pout_dbm"),
-        ("tx_gain_db",        gain_limits,                           "ge", "tx_gain_db"),
+        ("tx_gain_db",        gain_limits,                           "ge", None),  # auto-computed from tx_pout_dbm
     ]
 
     # ── helpers ──────────────────────────────────────────────────────
@@ -109,7 +110,18 @@ def sanitize_results(all_results: list, config) -> list:
         for key, limits_list, direction, rule_key in list_metrics:
             lst = data.get(key)
             if isinstance(lst, list):
-                rule = getattr(rules, rule_key, None)
+                # Resolve sanitize rule — gain range auto-computed from Pout range + VSG
+                if rule_key is None and key == "tx_gain_db":
+                    pout_rule = getattr(rules, "tx_pout_dbm", None)
+                    if pout_rule:
+                        rule = type('Rule', (), {
+                            'random_min': pout_rule.random_min - vsg_pwr,
+                            'random_max': pout_rule.random_max - vsg_pwr,
+                        })()
+                    else:
+                        rule = None
+                else:
+                    rule = getattr(rules, rule_key, None) if rule_key else None
                 if rule:
                     for i in range(len(lst)):
                         lim = limits_list[i] if i < len(limits_list) else limits_list[-1]
