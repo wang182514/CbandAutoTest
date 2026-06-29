@@ -95,6 +95,8 @@ class _ResultCard(QFrame):
 class ResultsPanel(QWidget):
     """Panel for showing test summary and detailed results."""
 
+    cleared = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._results: Dict[str, Dict[str, Any]] = {}
@@ -178,6 +180,7 @@ class ResultsPanel(QWidget):
         self._banner.setVisible(False)
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
+        self.cleared.emit()
 
     def set_test_names(self, names: List[str]):
         """Pre-populate card placeholders before tests start."""

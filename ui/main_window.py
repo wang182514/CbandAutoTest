@@ -199,6 +199,7 @@ class MainWindow(QMainWindow):
         # Results panel
         self._results_panel = ResultsPanel()
         self._results_panel.setMinimumHeight(200)
+        self._results_panel.cleared.connect(self._on_results_cleared)
         # Pre-populate card placeholders from registry
         from ui.test_runner import TEST_REGISTRY
         self._results_panel.set_test_names([info["name"] for info in TEST_REGISTRY.values()])
@@ -557,6 +558,12 @@ class MainWindow(QMainWindow):
     def _reset_button_styles(self):
         for btn in self._test_buttons.values():
             btn.setStyleSheet("")
+
+    def _on_results_cleared(self):
+        """Reset accumulated results and button states when user clears results."""
+        self._all_results = []
+        self._btn_report.setEnabled(False)
+        self._reset_button_styles()
 
     def _on_all_done(self, results: list):
         self._progress.setVisible(False)
