@@ -82,9 +82,9 @@
     },
 
     "test_rx_nf_v2": {
-        "_comment": "RX NF + Gain + 带外抑制 — 扩展模板 state_RX_NF.state2 (0.95-1.55 GHz, 13点)",
+        "_comment": "RX NF + Gain + 带外抑制 — 扩展模板 state_RX_NF2.state (0.95-1.55 GHz, 13点)",
         "enabled": true,
-        "template_name": "state_RX_NF.state2",
+        "template_name": "state_RX_NF2.state",
         "nf_freq_list_ghz": [0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.55],
         "switch_config": [1, 0, 0, 0],
         "limits": {

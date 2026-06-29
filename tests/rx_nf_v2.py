@@ -1,6 +1,6 @@
 """
 Test: RX Noise Figure, Gain, Flatness + Out-of-Band Rejection.
-Uses extended template state_RX_NF.state2 covering IF 0.95-1.55 GHz (13 points).
+Uses extended template state_RX_NF2.state covering IF 0.95-1.55 GHz (13 points).
 
 - First 11 points (0.95-1.45 GHz): standard NF/Gain/Flatness evaluation.
 - Point at IF 1.55 GHz (RF 3.6 GHz): out-of-band gain → rejection computed
@@ -20,7 +20,7 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
 
     try:
         # ---- load NF template (extended 0.95-1.55 GHz) ----
-        base.log.info("加载噪声系数模板 (v2)...")
+        base.log.info("加载噪声系数模板 (state_RX_NF2.state)...")
         base.sa.set_mode_nf()
         time.sleep(1)
         base.sa.load_state(cfg.template_name)
@@ -29,7 +29,7 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
             base.log.info("  模板已调用")
         else:
             base.log.warning(f"  模板错误: {err}")
-
+        base.log.warning(cfg.template_name)
         # ---- set switches ----
         base.set_switches(cfg.switch_config)
 
