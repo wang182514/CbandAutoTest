@@ -74,7 +74,7 @@ class SpectrumAnalyzer:
     def load_state(self, template_name: str):
         """Load an instrument state file (from the analyzer's local storage)."""
         self._inst.write(f':MMEM:LOAD:STAT "{template_name}"')
-        time.sleep(1)
+        self._inst.query("*OPC?")  # block until load completes
 
     def check_error(self) -> str:
         """Query :SYST:ERR? and return result."""
