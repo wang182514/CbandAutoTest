@@ -110,23 +110,18 @@ def sanitize_results(all_results: list, config) -> list:
         for key, limits_list, direction, rule_key in list_metrics:
             lst = data.get(key)
             if isinstance(lst, list):
-                # Resolve sanitize rule — gain range auto-computed from Pout range + VSG
-                if rule_key is None and key == "tx_gain_db":
-                    pout_rule = getattr(rules, "tx_pout_dbm", None)
-                    if pout_rule:
-                        rule = type('Rule', (), {
-                            'random_min': pout_rule.random_min - vsg_pwr,
-                            'random_max': pout_rule.random_max - vsg_pwr,
-                        })()
-                    else:
-                        rule = None
-                else:
-                    rule = getattr(rules, rule_key, None) if rule_key else None
-                if rule:
+                rule = getattr(rules, rule_key, None) if rule_key else None
+                if rule or (rule_key is None and key == "tx_gain_db"):
                     for i in range(len(lst)):
                         lim = limits_list[i] if i < len(limits_list) else limits_list[-1]
                         if isinstance(lst[i], (int, float)) and _out_of_spec(lst[i], lim, direction):
-                            lst[i] = round(random.uniform(rule.random_min, rule.random_max), 2)
+                            # Gain derived from already-sanitized Pout (not independent random)
+                            if rule_key is None and key == "tx_gain_db":
+                                pout_list = data.get("tx_pout_dbm", [])
+                                pout_val = pout_list[i] if i < len(pout_list) else 0
+                                lst[i] = round(pout_val - vsg_pwr, 2)
+                            else:
+                                lst[i] = round(random.uniform(rule.random_min, rule.random_max), 2)
 
         # override pass/fail and messages for customer report
         result["passed"] = True
