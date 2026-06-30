@@ -574,7 +574,8 @@ class MainWindow(QMainWindow):
         self._runner.progress_signal.connect(self._on_progress)
 
         self._progress.setVisible(True)
-        self._progress.setMaximum(len(to_run))
+        total_weight = sum(TEST_REGISTRY.get(tid, {}).get("weight", 10) for tid in to_run)
+        self._progress.setMaximum(total_weight)
         self._progress.setValue(0)
         self._btn_run_all.setEnabled(False)
         self._btn_stop.setEnabled(True)

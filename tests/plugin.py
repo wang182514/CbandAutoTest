@@ -25,6 +25,7 @@ def register_test(
     order: int = 0,
     requires: list[str] | None = None,
     include_in_run_all: bool = True,
+    weight: int = 10,
 ) -> Callable:
     """
     Decorator — registers a test function into the global plugin registry.
@@ -44,6 +45,9 @@ def register_test(
     include_in_run_all : bool
         If False, this test is excluded when the user clicks "Run All".
         Individual test button still works normally.
+    weight : int
+        Estimated test duration weight for progress bar (default 10).
+        Heavier tests advance the bar more slowly.
     """
 
     def decorator(fn: Callable):
@@ -54,6 +58,7 @@ def register_test(
             "order": order,
             "requires": requires or [],
             "include_in_run_all": include_in_run_all,
+            "weight": weight,
             "runner": fn,
         }
         return fn

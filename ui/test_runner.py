@@ -51,10 +51,16 @@ class TestRunner(QThread):
         all_results = []
         total = len(self._test_names)
 
+        # weighted progress: each test has an estimated weight for smoother bar
+        total_weight = sum(TEST_REGISTRY.get(n, {}).get("weight", 10) for n in self._test_names)
+        cumulative_weight = 0
+
         for idx, name in enumerate(self._test_names):
             if self._stop_requested:
                 self.log_signal.emit("=== 用户停止 ===")
                 break
+
+            w = TEST_REGISTRY.get(name, {}).get("weight", 10)
 
             info = TEST_REGISTRY.get(name)
             if info is None:
@@ -108,7 +114,8 @@ class TestRunner(QThread):
                 })
                 self.result_signal.emit(display_name, False, [f"{prefix}异常: {e}"], {})
 
-            self.progress_signal.emit(idx + 1, total)
+            cumulative_weight += w
+            self.progress_signal.emit(cumulative_weight, total_weight)
 
         self.finished_signal.emit(all_results)
 
