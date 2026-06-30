@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
     QStatusBar, QSplitter, QApplication, QScrollArea, QSizePolicy,
 )
-from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings
+from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings, QVariantAnimation
 
 from config.config_manager import ConfigManager
 from ui.settings_dialog import SettingsDialog
@@ -559,12 +559,14 @@ class MainWindow(QMainWindow):
         self._status.showMessage("测试运行中...")
 
         self._runner.start()
+        self._start_run_pulse()
 
     def _on_stop(self):
         if self._runner and self._runner.isRunning():
             self._runner.request_stop()
             self._status.showMessage("正在停止...")
         self._safe_stop_instruments()
+        self._stop_run_pulse()
 
     def _safe_stop_instruments(self):
         """Immediately shut off RF and power for safety (called on stop)."""
@@ -621,6 +623,30 @@ class MainWindow(QMainWindow):
         for btn in self._test_buttons.values():
             btn.setStyleSheet("")
 
+    # ── run button pulse animation ──────────────────────────────────
+
+    def _start_run_pulse(self):
+        self._run_pulse = QVariantAnimation(self)
+        self._run_pulse.setDuration(900)
+        self._run_pulse.setStartValue(0.0)
+        self._run_pulse.setEndValue(1.0)
+        self._run_pulse.setLoopCount(-1)
+        self._run_pulse.valueChanged.connect(self._on_pulse_tick)
+        self._run_pulse.start()
+
+    def _stop_run_pulse(self):
+        if hasattr(self, '_run_pulse') and self._run_pulse:
+            self._run_pulse.stop()
+        self._btn_run_all.setStyleSheet("")
+
+    def _on_pulse_tick(self, val):
+        r = int(250 + (91 - 250) * val)
+        g = int(250 + (155 - 250) * val)
+        b = int(250 + (213 - 250) * val)
+        self._btn_run_all.setStyleSheet(
+            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #5b9bd5; }}"
+        )
+
     def _on_results_cleared(self):
         """Reset accumulated results and button states when user clears results."""
         self._all_results = []
@@ -628,6 +654,7 @@ class MainWindow(QMainWindow):
         self._reset_button_styles()
 
     def _on_all_done(self, results: list):
+        self._stop_run_pulse()
         self._progress.setVisible(False)
         self._btn_run_all.setEnabled(True)
         self._btn_stop.setEnabled(False)
