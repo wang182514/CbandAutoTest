@@ -328,7 +328,7 @@ class MainWindow(QMainWindow):
                 timeout_sec=cfg.rx_power_supply.timeout_sec,
             )
             idn = self._rx_pwr.connect()
-            self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
+            self._lbl_rx_pwr.setText("接收电源: ✓ 已连接")
             self._lbl_rx_pwr.setToolTip(idn)
             self._set_status_indicator(self._ind_rx_pwr, "ok")
             self._log(f"  RX电源: {idn}")
@@ -345,7 +345,7 @@ class MainWindow(QMainWindow):
                 timeout_sec=cfg.tx_power_supply.timeout_sec,
             )
             idn = self._tx_pwr.connect()
-            self._lbl_tx_pwr.setText(f"发射电源: ✓ {self._trim_idn(idn)}")
+            self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
             self._lbl_tx_pwr.setToolTip(idn)
             self._set_status_indicator(self._ind_tx_pwr, "ok")
             self._log(f"  TX电源: {idn}")
@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
                 timeout_ms=int(cfg.signal_generator.timeout_sec * 1000),
             )
             idn = self._vsg.connect()
-            self._lbl_vsg.setText(f"信号源: ✓ {self._trim_idn(idn)}")
+            self._lbl_vsg.setText("信号源: ✓ 已连接")
             self._lbl_vsg.setToolTip(idn)
             self._set_status_indicator(self._ind_vsg, "ok")
             self._log(f"  信号源: {idn}")
@@ -379,7 +379,7 @@ class MainWindow(QMainWindow):
                 timeout_ms=int(cfg.spectrum_analyzer.timeout_sec * 1000),
             )
             idn = self._sa.connect()
-            self._lbl_sa.setText(f"频谱仪: ✓ {self._trim_idn(idn)}")
+            self._lbl_sa.setText("频谱仪: ✓ 已连接")
             self._lbl_sa.setToolTip(idn)
             self._set_status_indicator(self._ind_sa, "ok")
             self._log(f"  频谱仪: {idn}")
@@ -397,7 +397,7 @@ class MainWindow(QMainWindow):
             )
             self._switch.connect()
             com = cfg.switch_matrix.com_port
-            self._lbl_switch.setText(f"开关矩阵: ✓ {com}")
+            self._lbl_switch.setText("开关矩阵: ✓ 已连接")
             self._lbl_switch.setToolTip(f"COM端口: {com}")
             self._set_status_indicator(self._ind_switch, "ok")
             self._log(f"  开关矩阵: {com}")
