@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         g3 = QVBoxLayout(grp_test)
 
         self._btn_run_all = QPushButton("▶  运行全部测试")
-        self._btn_run_all.clicked.connect(lambda: self._run_tests(None))
+        self._btn_run_all.clicked.connect(lambda b=self._btn_run_all: self._run_tests(None, b))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_run_all)
 
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
                 btn.setObjectName(tid)
                 btn.setMaximumWidth(320)
                 btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                btn.clicked.connect(lambda checked, n=tid: self._run_tests([n]))
+                btn.clicked.connect(lambda checked, n=tid, b=btn: self._run_tests([n], b))
                 g3.addWidget(btn)
                 self._test_buttons[tid] = btn
 
@@ -518,7 +518,7 @@ class MainWindow(QMainWindow):
     #  Test execution
     # ========================================================================
 
-    def _run_tests(self, test_names: list | None):
+    def _run_tests(self, test_names: list | None, trigger_btn=None):
         """Run one or all tests in a worker thread."""
         if not all([self._rx_pwr, self._tx_pwr, self._vsg, self._sa, self._switch]):
             QMessageBox.warning(self, "未连接", "请先连接全部仪表")
@@ -559,8 +559,7 @@ class MainWindow(QMainWindow):
         self._status.showMessage("测试运行中...")
 
         self._runner.start()
-        trigger_btn = self.sender() if self.sender() else self._btn_run_all
-        self._start_run_pulse(trigger_btn)
+        self._start_run_pulse(trigger_btn or self._btn_run_all)
 
     def _on_stop(self):
         if self._runner and self._runner.isRunning():
