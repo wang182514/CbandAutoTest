@@ -194,7 +194,7 @@
     "report": {
         "txt_enabled": true,
         "docx_enabled": true,
-        "template_file": "CbandTemplate.docx",
+        "template_file": "CbandTemplateV2.docx",
         "txt_output_dir": "output/reports/data",
         "docx_output_dir": "output/reports/data",
         "docx_customer_dir": "output/reports"

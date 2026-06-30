@@ -244,6 +244,11 @@ class ReportGenerator:
         os.makedirs(output_dir, exist_ok=True)
         doc = Document(template_path)
         d = self._index_results(all_results)
+
+        # ── detect template type ───────────────────────────────────
+        if "V2" in os.path.basename(template_path):
+            return self._write_docx_by_bookmark(doc, d, sn, output_dir, template_path)
+
         F = self._fmt
         FI = self._fmt_item
         PV = self._pn_val
@@ -302,6 +307,77 @@ class ReportGenerator:
 
         if errors:
             self._log.warning(f"  DOCX 共 {len(errors)} 个单元格写入失败")
+
+        path = os.path.join(output_dir, f"检验记录_{sn}.docx")
+        doc.save(path)
+        return path
+
+    # ========================================================================
+    #  Bookmark-based DOCX (V2 template)
+    # ========================================================================
+
+    def _write_docx_by_bookmark(self, doc, d: dict, sn: str, output_dir: str, template_path: str) -> str | None:
+        """Fill bookmarks in a V2 template.  Returns saved path or None."""
+        F = self._fmt
+        FI = self._fmt_item
+        PV = self._pn_val
+
+        bookmark_map = {
+            # product
+            "product_name": self._cfg.product.name,
+            "product_model": self._cfg.product.model,
+            "test_date": self._cfg.get("test_date", ""),
+            "test_env": self._cfg.product.test_env,
+            "serial_number": sn,
+            "operator": self._cfg.product.operator,
+            # rx
+            "rx_current": F(d, "rx_current_a", "A"),
+            "gain_mean_db": F(d, "gain_mean_db", "dB"),
+            "nf_mean_db": F(d, "nf_mean_db", "dB"),
+            "gain_flatness_db": F(d, "gain_flatness_db", "dB"),
+            "rx_pn_spots": "\n".join(
+                f"{PV(d, 'rx_pn_spots', l)}@{l}"
+                for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
+                if PV(d, 'rx_pn_spots', l) != "—"
+            ),
+            # tx
+            "tx_peak_current": F(d, "tx_peak_current_a", "A"),
+            "tx_gain_1050": FI(d, "tx_gain_db", 0, "dB"),
+            "tx_pout_1050": FI(d, "tx_pout_dbm", 0, "dBm"),
+            "tx_gain_1200": FI(d, "tx_gain_db", 1, "dB"),
+            "tx_pout_1200": FI(d, "tx_pout_dbm", 1, "dBm"),
+            "tx_gain_1550": FI(d, "tx_gain_db", 2, "dB"),
+            "tx_pout_1550": FI(d, "tx_pout_dbm", 2, "dBm"),
+            "tx_flatness_db": F(d, "tx_flatness_db", "dB"),
+            "tx_pn_spots": "\n".join(
+                f"{PV(d, 'tx_pn_spots', l)}@{l}"
+                for l in ["100Hz", "1KHz", "10KHz", "100KHz"]
+                if PV(d, 'tx_pn_spots', l) != "—"
+            ),
+        }
+
+        errors = []
+        ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        body = doc.element.body
+
+        for name, val in bookmark_map.items():
+            found = False
+            for p in body.iter(f'{{{ns}}}p'):
+                # check if this paragraph contains the bookmark start
+                bm = p.find(f'.//{{{ns}}}bookmarkStart[@{{{ns}}}name="{name}"]')
+                if bm is not None:
+                    # find the first run in this paragraph and set its text
+                    r = p.find(f'{{{ns}}}r')
+                    t = r.find(f'{{{ns}}}t') if r is not None else None
+                    if t is not None:
+                        t.text = str(val)
+                        found = True
+                        break
+            if not found:
+                errors.append(f"书签 {name} 未找到")
+
+        if errors:
+            self._log.warning(f"  DOCX 书签 {len(errors)} 个未找到: {', '.join(errors[:5])}")
 
         path = os.path.join(output_dir, f"检验记录_{sn}.docx")
         doc.save(path)
