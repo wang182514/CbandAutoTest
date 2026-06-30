@@ -216,7 +216,16 @@ class MainWindow(QMainWindow):
 
         # Log output
         grp_log = QGroupBox("日志")
+        log_header = QHBoxLayout()
+        log_header.addStretch()
+        btn_clear_log = QPushButton("✕")
+        btn_clear_log.setFixedSize(24, 20)
+        btn_clear_log.setToolTip("清空日志")
+        btn_clear_log.setStyleSheet("QPushButton { border: none; font-size: 12px; color: #999; } QPushButton:hover { color: #333; }")
+        btn_clear_log.clicked.connect(lambda: self._log_view.clear())
+        log_header.addWidget(btn_clear_log)
         g4 = QVBoxLayout(grp_log)
+        g4.addLayout(log_header)
         self._log_view = QTextEdit()
         self._log_view.setReadOnly(True)
         self._log_view.setMinimumHeight(80)
@@ -444,7 +453,7 @@ class MainWindow(QMainWindow):
             font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #5b9bd5; }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
             background: #fafafa; min-height: 24px;
@@ -478,6 +487,19 @@ class MainWindow(QMainWindow):
         QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
         QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+        /* -- splitter handle -- */
+        QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
+        QSplitter::handle:hover { background: #5b9bd5; }
+        /* -- tab widget -- */
+        QTabWidget::pane { border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; }
+        QTabBar::tab {
+            padding: 6px 14px; border: 1px solid #ddd; border-bottom: none;
+            border-radius: 4px 4px 0 0; background: #f5f5f5; color: #666;
+        }
+        QTabBar::tab:selected { background: #fff; color: #1565C0; font-weight: bold; border-bottom: 2px solid #1565C0; }
+        QTabBar::tab:hover:!selected { background: #e8e8e8; }
+        /* -- tooltip -- */
+        QToolTip { background: #444; color: #f0f0f0; border: 1px solid #666; border-radius: 4px; padding: 4px 8px; }
         """
 
     # ========================================================================
