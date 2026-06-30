@@ -8,7 +8,7 @@ from .base import TestBase, TestResult
 from .plugin import register_test
 
 
-@register_test(id="tx_flatness_pn", name="TX 平坦度 + 相位噪声", category="tx", order=4, weight=15)
+@register_test(id="tx_flatness_pn", name="TX 平坦度 + 相位噪声", category="tx", order=4, weight=30)
 def run_tx_flatness_pn(base: TestBase) -> TestResult:
     result = TestResult(test_name="TX Flatness & Phase Noise")
     cfg = base.cfg.test_tx_flatness_pn

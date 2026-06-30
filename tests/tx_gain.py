@@ -9,7 +9,7 @@ from .base import TestBase, TestResult
 from .plugin import register_test
 
 
-@register_test(id="tx_gain", name="TX 增益 + 输出功率", category="tx", order=3, weight=5)
+@register_test(id="tx_gain", name="TX 增益 + 输出功率", category="tx", order=3, weight=8)
 def run_tx_gain(base: TestBase) -> TestResult:
     result = TestResult(test_name="TX Gain & Pout")
     cfg = base.cfg.test_tx_gain
