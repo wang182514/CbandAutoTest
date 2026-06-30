@@ -439,50 +439,44 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #2b2b2b; color: #dcdcdc; }
+        QMainWindow { background: #f0f2f5; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #555; border-radius: 6px;
+            font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
-            color: #e0e0e0;
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; color: #b0b0b0; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; }
         QPushButton {
-            border: 1px solid #555; border-radius: 4px; padding: 6px 14px;
-            background: #3c3c3c; min-height: 24px; color: #dcdcdc;
+            border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
+            background: #fafafa; min-height: 24px;
         }
-        QPushButton:hover { background: #4a4a4a; border-color: #6ab0f3; }
-        QPushButton:pressed { background: #353535; }
-        QPushButton:disabled { color: #666; background: #333; }
+        QPushButton:hover { background: #e3e8ee; border-color: #999; }
+        QPushButton:pressed { background: #d0d7e0; }
+        QPushButton:disabled { color: #aaa; background: #f5f5f5; }
         QLineEdit {
-            border: 1px solid #555; border-radius: 3px; padding: 4px 8px;
-            background: #3c3c3c; color: #dcdcdc;
+            border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
         }
-        QLineEdit:focus { border-color: #6ab0f3; }
+        QLineEdit:focus { border-color: #5b9bd5; }
         QProgressBar {
-            border: 1px solid #555; border-radius: 3px; text-align: center;
-            height: 14px; background: #3c3c3c; color: #dcdcdc;
+            border: 1px solid #ccc; border-radius: 3px; text-align: center;
+            height: 14px;
         }
-        QProgressBar::chunk { background: #6ab0f3; border-radius: 2px; }
+        QProgressBar::chunk { background: #5b9bd5; border-radius: 2px; }
         QScrollArea { border: none; }
-        QStatusBar { background: #222; border-top: 1px solid #444; color: #999; }
+        QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
         QTextEdit {
-            border: 1px solid #555; border-radius: 3px;
-            background: #1e1e1e; color: #dcdcdc;
-            font-family: Consolas, 'Microsoft YaHei', monospace;
+            border: 1px solid #ccc; border-radius: 3px;
+            background: #fafbfc; font-family: Consolas, 'Microsoft YaHei', monospace;
         }
-        QTextBrowser { border: 1px solid #555; border-radius: 3px; background: #2b2b2b; color: #dcdcdc; }
-        QTableWidget { border: 1px solid #555; gridline-color: #444; background: #333; color: #dcdcdc; }
-        QHeaderView::section {
-            background: #3c3c3c; padding: 4px; border: none;
-            border-bottom: 1px solid #555; color: #b0b0b0;
-        }
-        QScrollBar:vertical { width: 8px; background: #2b2b2b; border-radius: 4px; }
-        QScrollBar::handle:vertical { background: #555; border-radius: 4px; min-height: 20px; }
-        QScrollBar::handle:vertical:hover { background: #6ab0f3; }
+        QTableWidget { border: 1px solid #d0d0d0; gridline-color: #e0e0e0; }
+        QHeaderView::section { background: #f0f0f0; padding: 4px; border: none; border-bottom: 1px solid #d0d0d0; }
+        QTextBrowser { border: 1px solid #d0d0d0; border-radius: 3px; background: #fff; }
+        QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:vertical { background: #c0c0c0; border-radius: 4px; min-height: 20px; }
+        QScrollBar::handle:vertical:hover { background: #a0a0a0; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QScrollBar:horizontal { height: 8px; background: #2b2b2b; border-radius: 4px; }
-        QScrollBar::handle:horizontal { background: #555; border-radius: 4px; min-width: 20px; }
-        QScrollBar::handle:horizontal:hover { background: #6ab0f3; }
+        QScrollBar:horizontal { height: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
+        QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         """
 
@@ -813,7 +807,7 @@ class MainWindow(QMainWindow):
         elif "[ERROR]" in msg or "异常" in msg or "失败" in msg:
             color = "#C62828"
         else:
-            color = "#dcdcdc"
+            color = "#333"
         line = f"<span style='color:#888;'>[{timestamp}]</span> <span style='color:{color};'>{escaped}</span><br>"
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
         self._log_view.insertHtml(line)
