@@ -86,12 +86,15 @@ class MainWindow(QMainWindow):
             ("✕", self.close, "关闭"),
         ]:
             btn = QPushButton(icon)
-            btn.setFixedSize(28, 24)
+            btn.setFixedSize(32, 24)
             btn.setToolTip(tip)
             btn.setStyleSheet(
-                "QPushButton { background: transparent; color: #bdc3c7; border: none; font-size: 13px; }"
+                "QPushButton { background: transparent; color: #ecf0f1; border: none; "
+                "font-size: 14px; font-weight: bold; min-height: 0; padding: 0; }"
                 "QPushButton:hover { background: #34495e; color: #fff; }"
+                "QPushButton:pressed { background: #1a252f; }"
             )
+            btn.setFlat(True)
             btn.clicked.connect(slot)
             h.addWidget(btn)
 
@@ -117,6 +120,57 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showMaximized()
+
+    # ── window edge resize ──────────────────────────────────────────
+
+    RESIZE_MARGIN = 6
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._resize_edge = self._hit_resize_edge(event.pos())
+            if self._resize_edge:
+                self.windowHandle().startSystemResize(self._resize_edge)
+                return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        edge = self._hit_resize_edge(event.pos())
+        if edge is None:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        elif edge in (Qt.Edge.TopEdge, Qt.Edge.BottomEdge):
+            self.setCursor(Qt.CursorShape.SizeVerCursor)
+        elif edge in (Qt.Edge.LeftEdge, Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeHorCursor)
+        elif edge in (Qt.Edge.TopEdge | Qt.Edge.LeftEdge, Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edge in (Qt.Edge.TopEdge | Qt.Edge.RightEdge, Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        super().mouseMoveEvent(event)
+
+    def _hit_resize_edge(self, pos):
+        m = self.RESIZE_MARGIN
+        w, h = self.width(), self.height()
+        top = pos.y() <= m
+        bot = pos.y() >= h - m
+        left = pos.x() <= m
+        right = pos.x() >= w - m
+        if top and left:
+            return Qt.Edge.TopEdge | Qt.Edge.LeftEdge
+        if top and right:
+            return Qt.Edge.TopEdge | Qt.Edge.RightEdge
+        if bot and left:
+            return Qt.Edge.BottomEdge | Qt.Edge.LeftEdge
+        if bot and right:
+            return Qt.Edge.BottomEdge | Qt.Edge.RightEdge
+        if top:
+            return Qt.Edge.TopEdge
+        if bot:
+            return Qt.Edge.BottomEdge
+        if left:
+            return Qt.Edge.LeftEdge
+        if right:
+            return Qt.Edge.RightEdge
+        return None
 
     # ========================================================================
     #  UI construction
