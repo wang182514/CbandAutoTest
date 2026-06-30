@@ -439,47 +439,44 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #f5f7fa; }
+        QMainWindow { background: #f0f2f5; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #bbdefb; border-radius: 6px;
+            font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; color: #1565C0; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; }
         QPushButton {
-            border: 1px solid #90caf9; border-radius: 4px; padding: 6px 14px;
-            background: #fff; min-height: 24px; color: #1a237e;
+            border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
+            background: #fafafa; min-height: 24px;
         }
-        QPushButton:hover { background: #e3f2fd; border-color: #42a5f5; }
-        QPushButton:pressed { background: #bbdefb; }
-        QPushButton:disabled { color: #90caf9; background: #fafafa; }
+        QPushButton:hover { background: #e3e8ee; border-color: #999; }
+        QPushButton:pressed { background: #d0d7e0; }
+        QPushButton:disabled { color: #aaa; background: #f5f5f5; }
         QLineEdit {
-            border: 1px solid #bbdefb; border-radius: 3px; padding: 4px 8px;
+            border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
         }
-        QLineEdit:focus { border-color: #1565C0; }
+        QLineEdit:focus { border-color: #5b9bd5; }
         QProgressBar {
-            border: 1px solid #bbdefb; border-radius: 3px; text-align: center;
+            border: 1px solid #ccc; border-radius: 3px; text-align: center;
             height: 14px;
         }
-        QProgressBar::chunk { background: #1565C0; border-radius: 2px; }
+        QProgressBar::chunk { background: #5b9bd5; border-radius: 2px; }
         QScrollArea { border: none; }
-        QStatusBar { background: #e3f2fd; border-top: 1px solid #90caf9; color: #1565C0; }
+        QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
         QTextEdit {
-            border: 1px solid #bbdefb; border-radius: 3px;
+            border: 1px solid #ccc; border-radius: 3px;
             background: #fafbfc; font-family: Consolas, 'Microsoft YaHei', monospace;
         }
-        QTableWidget { border: 1px solid #bbdefb; gridline-color: #e3f2fd; }
-        QHeaderView::section {
-            background: #e3f2fd; padding: 4px; border: none;
-            border-bottom: 2px solid #1565C0; color: #1565C0; font-weight: bold;
-        }
-        QTextBrowser { border: 1px solid #bbdefb; border-radius: 3px; background: #fff; }
-        QScrollBar:vertical { width: 8px; background: #e3f2fd; border-radius: 4px; }
-        QScrollBar::handle:vertical { background: #90caf9; border-radius: 4px; min-height: 20px; }
-        QScrollBar::handle:vertical:hover { background: #64b5f6; }
+        QTableWidget { border: 1px solid #d0d0d0; gridline-color: #e0e0e0; }
+        QHeaderView::section { background: #f0f0f0; padding: 4px; border: none; border-bottom: 1px solid #d0d0d0; }
+        QTextBrowser { border: 1px solid #d0d0d0; border-radius: 3px; background: #fff; }
+        QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:vertical { background: #c0c0c0; border-radius: 4px; min-height: 20px; }
+        QScrollBar::handle:vertical:hover { background: #a0a0a0; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QScrollBar:horizontal { height: 8px; background: #e3f2fd; border-radius: 4px; }
-        QScrollBar::handle:horizontal { background: #90caf9; border-radius: 4px; min-width: 20px; }
-        QScrollBar::handle:horizontal:hover { background: #64b5f6; }
+        QScrollBar:horizontal { height: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
+        QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         """
 
@@ -648,11 +645,11 @@ class MainWindow(QMainWindow):
     def _on_pulse_tick(self, val):
         if not hasattr(self, '_pulse_btn') or not self._pulse_btn:
             return
-        r = int(255 + (187 - 255) * val)
-        g = int(255 + (222 - 255) * val)
-        b = int(255 + (251 - 255) * val)
+        r = int(250 + (91 - 250) * val)
+        g = int(250 + (155 - 250) * val)
+        b = int(250 + (213 - 250) * val)
         self._pulse_btn.setStyleSheet(
-            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #1565C0; }}"
+            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #5b9bd5; }}"
         )
 
     def _on_results_cleared(self):
