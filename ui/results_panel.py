@@ -73,19 +73,19 @@ class _ResultCard(QFrame):
 
     def set_default_style(self):
         self.setStyleSheet(
-            "_ResultCard { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }"
-            "_ResultCard:hover { border-color: #aaa; background: #f5f5f5; }"
+            "_ResultCard { background: #3c3c3c; border: 1px solid #555; border-radius: 6px; }"
+            "_ResultCard:hover { border-color: #6ab0f3; background: #444; }"
         )
         self._status_lbl.setText("—")
-        self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #999;")
+        self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #888;")
 
     def set_passed(self, passed: bool, metric_text: str = "", stopped: bool = False):
         if stopped:
-            clr, bg, badge = "#e65100", "#fff3e0", "⊘  已终止"
+            clr, bg, badge = "#ff9800", "#3e2a00", "⊘  已终止"
         elif passed:
-            clr, bg, badge = "#2e7d32", "#e8f5e9", "✓  PASS"
+            clr, bg, badge = "#66bb6a", "#1a3a1a", "✓  PASS"
         else:
-            clr, bg, badge = "#c62828", "#ffebee", "✗  FAIL"
+            clr, bg, badge = "#ef5350", "#3a1a1a", "✗  FAIL"
 
         self.setStyleSheet(
             f"_ResultCard {{ background: {bg}; border: 1px solid {clr}; "
@@ -95,6 +95,7 @@ class _ResultCard(QFrame):
         self._status_lbl.setText(badge)
         self._status_lbl.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {clr};")
         self._metric_lbl.setText(metric_text)
+        self._metric_lbl.setStyleSheet(f"color: #aaa; font-size: 11px;")
 
     def mousePressEvent(self, event):
         self.clicked.emit(self._test_name)
@@ -286,8 +287,8 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _welcome_html() -> str:
         return (
-            "<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;'>"
-            "<p style='color:#666;'>测试结果将在运行后自动显示。</p>"
+            "<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;background:#2b2b2b;'>"
+            "<p style='color:#888;'>测试结果将在运行后自动显示。</p>"
             "</body></html>"
         )
 
@@ -295,15 +296,16 @@ class ResultsPanel(QWidget):
     def _style() -> str:
         return """
         <style>
-            body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px; }
-            h3 { margin: 8px 0 6px 0; color: #333; }
+            body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px;
+                   background: #2b2b2b; color: #dcdcdc; }
+            h3 { margin: 8px 0 6px 0; color: #e0e0e0; }
             table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
-            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
-            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
-            .pass { color: #2e7d32; font-weight: bold; }
-            .fail { color: #c62828; font-weight: bold; }
+            th, td { border: 1px solid #555; padding: 4px 7px; text-align: center; }
+            th { background-color: #3c3c3c; font-weight: bold; color: #b0b0b0; }
+            tr:nth-child(even):not(.agg-row) td { background-color: #333; }
+            .agg-row td { background-color: #3c3c3c; font-weight: bold; font-size: 12px; color: #e0e0e0; }
+            .pass { color: #66bb6a; font-weight: bold; }
+            .fail { color: #ef5350; font-weight: bold; }
         </style>
         """
 
