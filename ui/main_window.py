@@ -439,12 +439,18 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #f0f2f5; }
-        QGroupBox {
-            font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
-            margin-top: 8px; padding-top: 10px;
+        QMainWindow {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                stop:0 #e8f0fe, stop:0.4 #f0f4ff, stop:0.7 #f5f7fa, stop:1 #fafbfc);
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; }
+        QGroupBox {
+            font-weight: bold;
+            border: 1px solid rgba(180,190,210,0.6);
+            border-radius: 8px;
+            margin-top: 8px; padding-top: 10px;
+            background: rgba(255,255,255,0.7);
+        }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; color: #3a4a5c; }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
             background: #fafafa; min-height: 24px;
