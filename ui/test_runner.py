@@ -2,12 +2,29 @@
 QThread test runner — runs tests sequentially without blocking the UI.
 """
 
-from PySide6.QtCore import QThread, Signal
+import time
+
+from PySide6.QtCore import QThread, Signal, QSettings
 
 from tests.base import TestBase
 from tests.plugin import discover
 
 TEST_REGISTRY = discover()
+
+# ── adaptive weights (learned from actual test durations) ──────────
+
+def _load_weight(test_id: str, fallback: int = 10) -> int:
+    """Return the saved duration (seconds) for a test, or fallback."""
+    s = QSettings("CBand", "AutoTest")
+    val = s.value(f"timing/{test_id}")
+    try:
+        return max(1, int(float(val)))
+    except (TypeError, ValueError):
+        return fallback
+
+def _save_weight(test_id: str, seconds: float):
+    s = QSettings("CBand", "AutoTest")
+    s.setValue(f"timing/{test_id}", max(1, int(seconds)))
 
 
 class TestRunner(QThread):
@@ -51,8 +68,9 @@ class TestRunner(QThread):
         all_results = []
         total = len(self._test_names)
 
-        # weighted progress: each test has an estimated weight for smoother bar
-        total_weight = sum(TEST_REGISTRY.get(n, {}).get("weight", 10) for n in self._test_names)
+        # adaptive weighted progress: load saved timings, fall back to registry weight
+        total_weight = sum(_load_weight(n, TEST_REGISTRY.get(n, {}).get("weight", 10))
+                           for n in self._test_names)
         cumulative_weight = 0
 
         for idx, name in enumerate(self._test_names):
@@ -60,7 +78,7 @@ class TestRunner(QThread):
                 self.log_signal.emit("=== 用户停止 ===")
                 break
 
-            w = TEST_REGISTRY.get(name, {}).get("weight", 10)
+            w = _load_weight(name, TEST_REGISTRY.get(name, {}).get("weight", 10))
 
             # sub-progress callback: maps (sub_cur, sub_tot) → absolute progress
             base.set_progress_callback(
@@ -84,7 +102,10 @@ class TestRunner(QThread):
             self.log_signal.emit(f"{'='*50}")
 
             try:
+                t0 = time.monotonic()
                 result = runner(base)
+                elapsed = time.monotonic() - t0
+                _save_weight(name, elapsed)
                 stopped = self._stop_requested
                 msgs = list(result.messages)
                 if stopped:
