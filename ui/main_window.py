@@ -559,7 +559,8 @@ class MainWindow(QMainWindow):
         self._status.showMessage("测试运行中...")
 
         self._runner.start()
-        self._start_run_pulse()
+        trigger_btn = self.sender() if self.sender() else self._btn_run_all
+        self._start_run_pulse(trigger_btn)
 
     def _on_stop(self):
         if self._runner and self._runner.isRunning():
@@ -625,7 +626,8 @@ class MainWindow(QMainWindow):
 
     # ── run button pulse animation ──────────────────────────────────
 
-    def _start_run_pulse(self):
+    def _start_run_pulse(self, btn):
+        self._pulse_btn = btn
         self._run_pulse = QVariantAnimation(self)
         self._run_pulse.setDuration(900)
         self._run_pulse.setStartValue(0.0)
@@ -637,13 +639,16 @@ class MainWindow(QMainWindow):
     def _stop_run_pulse(self):
         if hasattr(self, '_run_pulse') and self._run_pulse:
             self._run_pulse.stop()
-        self._btn_run_all.setStyleSheet("")
+        if hasattr(self, '_pulse_btn') and self._pulse_btn:
+            self._pulse_btn.setStyleSheet("")
 
     def _on_pulse_tick(self, val):
+        if not hasattr(self, '_pulse_btn') or not self._pulse_btn:
+            return
         r = int(250 + (91 - 250) * val)
         g = int(250 + (155 - 250) * val)
         b = int(250 + (213 - 250) * val)
-        self._btn_run_all.setStyleSheet(
+        self._pulse_btn.setStyleSheet(
             f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #5b9bd5; }}"
         )
 
