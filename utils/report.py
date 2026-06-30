@@ -360,24 +360,29 @@ class ReportGenerator:
         ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
         body = doc.element.body
 
+        # Collect all bookmarks once
+        bm_positions = {}
+        for bm in body.iter(f'{{{ns}}}bookmarkStart'):
+            name = bm.get(f'{{{ns}}}name')
+            if name and name != '_GoBack':
+                bm_positions[name] = bm
+
         for name, val in bookmark_map.items():
-            found = False
-            for p in body.iter(f'{{{ns}}}p'):
-                # check if this paragraph contains the bookmark start
-                bm = p.find(f'.//{{{ns}}}bookmarkStart[@{{{ns}}}name="{name}"]')
-                if bm is not None:
-                    # find the first run in this paragraph and set its text
-                    r = p.find(f'{{{ns}}}r')
-                    t = r.find(f'{{{ns}}}t') if r is not None else None
-                    if t is not None:
-                        t.text = str(val)
-                        found = True
-                        break
-            if not found:
+            bm = bm_positions.get(name)
+            if bm is None:
                 errors.append(f"书签 {name} 未找到")
+                continue
+            # Find the parent paragraph, then the first text run
+            p = bm.getparent()
+            r = p.find(f'{{{ns}}}r') if p is not None else None
+            t = r.find(f'{{{ns}}}t') if r is not None else None
+            if t is not None:
+                t.text = str(val)
+            else:
+                errors.append(f"书签 {name} 无文本")
 
         if errors:
-            self._log.warning(f"  DOCX 书签 {len(errors)} 个未找到: {', '.join(errors[:5])}")
+            self._log.warning(f"  DOCX 书签问题 ({len(errors)}): {', '.join(errors[:5])}")
 
         path = os.path.join(output_dir, f"检验记录_{sn}.docx")
         doc.save(path)
