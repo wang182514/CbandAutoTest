@@ -81,6 +81,7 @@ class SpectrumAnalyzer:
 
     def load_state(self, template_name: str):
         """Load an instrument state file (from the analyzer's local storage)."""
+        self._inst.write("*CLS")  # clear stale error queue
         self._inst.write(f':MMEM:LOAD:STAT "{template_name}"')
         self._inst.query("*OPC?")  # block until load completes
 
