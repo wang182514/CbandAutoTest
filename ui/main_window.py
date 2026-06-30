@@ -153,6 +153,7 @@ class MainWindow(QMainWindow):
         self._test_buttons: dict[str, QPushButton] = {}  # track for status updates
 
         cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
+        cat_colors = {"rx": "#1565C0", "tx": "#E65100", "general": "#555"}
         groups: dict[str, list] = {}
         for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
             groups.setdefault(info["category"], []).append(info)
@@ -162,7 +163,7 @@ class MainWindow(QMainWindow):
                 continue
             if cat in cat_labels:
                 cat_lbl = QLabel(cat_labels[cat])
-                cat_lbl.setStyleSheet("color: #666; font-size: 11px; margin-top: 4px;")
+                cat_lbl.setStyleSheet(f"color: {cat_colors.get(cat, '#666')}; font-size: 11px; font-weight: bold; margin-top: 4px;")
                 g3.addWidget(cat_lbl)
             for info in groups[cat]:
                 tid = info["id"]
@@ -178,10 +179,15 @@ class MainWindow(QMainWindow):
         self._btn_stop.clicked.connect(self._on_stop)
         self._btn_stop.setEnabled(False)
         self._btn_stop.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._btn_stop.setStyleSheet(
+            "QPushButton { border-left: 3px solid #E57373; }"
+            "QPushButton:enabled { border-left-color: #F44336; }"
+        )
         g3.addWidget(self._btn_stop)
 
         self._progress = QProgressBar()
         self._progress.setVisible(False)
+        self._progress.setFormat("%v / %m")
         g3.addWidget(self._progress)
 
         self._btn_report = QPushButton("📄  写入报告")
@@ -763,8 +769,17 @@ class MainWindow(QMainWindow):
 
     def _log(self, msg: str):
         timestamp = datetime.now().strftime("%H:%M:%S")
-        line = f"[{timestamp}] {msg}"
-        self._log_view.append(line)
+        escaped = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if "[WARN]" in msg:
+            color = "#E65100"
+        elif "[ERROR]" in msg or "异常" in msg or "失败" in msg:
+            color = "#C62828"
+        else:
+            color = "#333"
+        line = f"<span style='color:#888;'>[{timestamp}]</span> <span style='color:{color};'>{escaped}</span><br>"
+        self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
+        self._log_view.insertHtml(line)
+        self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
         self._log_view.ensureCursorVisible()
         self.logger.info(msg)
 

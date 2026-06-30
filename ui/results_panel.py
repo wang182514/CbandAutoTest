@@ -26,8 +26,10 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QTextBrowser, QPushButton, QFileDialog, QMessageBox,
     QLabel, QFrame, QScrollArea, QGridLayout, QSizePolicy,
+    QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 
 
 class _ResultCard(QFrame):
@@ -59,6 +61,13 @@ class _ResultCard(QFrame):
         self._metric_lbl.setStyleSheet("color: #666; font-size: 11px;")
         self._metric_lbl.setWordWrap(True)
         lay.addWidget(self._metric_lbl)
+
+        # subtle drop shadow
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(8)
+        shadow.setOffset(1, 2)
+        shadow.setColor(QColor(0, 0, 0, 40))
+        self.setGraphicsEffect(shadow)
 
         self.set_default_style()
 
@@ -291,7 +300,8 @@ class ResultsPanel(QWidget):
             table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
             th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
             th { background-color: #f2f2f2; font-weight: bold; }
-            .agg-row td { background-color: #f9f9f9; font-weight: bold; font-size: 12px; }
+            tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
+            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
             .pass { color: #2e7d32; font-weight: bold; }
             .fail { color: #c62828; font-weight: bold; }
         </style>
