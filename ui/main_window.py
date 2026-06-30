@@ -628,9 +628,10 @@ class MainWindow(QMainWindow):
     def _start_run_pulse(self, btn):
         self._pulse_btn = btn
         self._run_pulse = QVariantAnimation(self)
-        self._run_pulse.setDuration(900)
+        self._run_pulse.setDuration(1200)
         self._run_pulse.setStartValue(0.0)
-        self._run_pulse.setEndValue(1.0)
+        self._run_pulse.setKeyValueAt(0.5, 1.0)
+        self._run_pulse.setEndValue(0.0)
         self._run_pulse.setLoopCount(-1)
         self._run_pulse.valueChanged.connect(self._on_pulse_tick)
         self._run_pulse.start()
