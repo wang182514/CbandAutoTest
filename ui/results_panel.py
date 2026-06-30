@@ -26,9 +26,9 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QTextBrowser, QPushButton, QFileDialog, QMessageBox,
     QLabel, QFrame, QScrollArea, QGridLayout, QSizePolicy,
-    QGraphicsDropShadowEffect, QGraphicsOpacityEffect,
+    QGraphicsDropShadowEffect,
 )
-from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 
 
@@ -95,17 +95,6 @@ class _ResultCard(QFrame):
         self._status_lbl.setText(badge)
         self._status_lbl.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {clr};")
         self._metric_lbl.setText(metric_text)
-
-        # Fade-in animation on the status badge
-        effect = QGraphicsOpacityEffect(self._status_lbl)
-        effect.setOpacity(0.3)
-        self._status_lbl.setGraphicsEffect(effect)
-        anim = QPropertyAnimation(effect, b"opacity", self)
-        anim.setDuration(350)
-        anim.setStartValue(0.3)
-        anim.setEndValue(1.0)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        anim.start()
 
     def mousePressEvent(self, event):
         self.clicked.emit(self._test_name)

@@ -28,7 +28,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("C波段射频模块自动化测试系统")
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.resize(1200, 800)
 
         # ---- config ----
@@ -64,79 +63,14 @@ class MainWindow(QMainWindow):
         self._runner: TestRunner | None = None
 
     # ========================================================================
-    #  Custom title bar
-    # ========================================================================
-
-    def _build_title_bar(self) -> QWidget:
-        bar = QWidget()
-        bar.setFixedHeight(32)
-        bar.setStyleSheet("background: #2c3e50;")
-        h = QHBoxLayout(bar)
-        h.setContentsMargins(10, 0, 4, 0)
-        h.setSpacing(6)
-
-        title_lbl = QLabel("C波段射频模块自动化测试系统")
-        title_lbl.setStyleSheet("color: #ecf0f1; font-size: 12px; font-weight: bold;")
-        h.addWidget(title_lbl)
-        h.addStretch()
-
-        for icon, slot, tip in [
-            ("─", self.showMinimized, "最小化"),
-            ("□", self._toggle_maximize, "最大化"),
-            ("✕", self.close, "关闭"),
-        ]:
-            btn = QPushButton(icon)
-            btn.setFixedSize(28, 24)
-            btn.setToolTip(tip)
-            btn.setStyleSheet(
-                "QPushButton { background: transparent; color: #bdc3c7; border: none; font-size: 13px; }"
-                "QPushButton:hover { background: #34495e; color: #fff; }"
-            )
-            btn.clicked.connect(slot)
-            h.addWidget(btn)
-
-        # drag support
-        bar.mousePressEvent = self._title_bar_press
-        bar.mouseMoveEvent = self._title_bar_move
-        bar.mouseDoubleClickEvent = lambda e: self._toggle_maximize()
-
-        return bar
-
-    def _title_bar_press(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint()
-
-    def _title_bar_move(self, event):
-        if hasattr(self, '_drag_pos') and event.buttons() & Qt.MouseButton.LeftButton:
-            delta = event.globalPosition().toPoint() - self._drag_pos
-            self.move(self.pos() + delta)
-            self._drag_pos = event.globalPosition().toPoint()
-
-    def _toggle_maximize(self):
-        if self.isMaximized():
-            self.showNormal()
-        else:
-            self.showMaximized()
-
-    # ========================================================================
     #  UI construction
     # ========================================================================
 
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
-        root = QVBoxLayout(central)
-        root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(0)
-
-        # ---- custom title bar ----
-        self._title_bar = self._build_title_bar()
-        root.addWidget(self._title_bar)
-
-        # ---- main content (left | right splitter) ----
-        body = QWidget()
-        body_layout = QHBoxLayout(body)
-        body_layout.setContentsMargins(6, 6, 6, 6)
+        root = QHBoxLayout(central)
+        root.setContentsMargins(6, 6, 6, 6)
 
         # ---- left panel (scrollable so it fits small screens) ----
         left_scroll = QScrollArea()
@@ -296,14 +230,12 @@ class MainWindow(QMainWindow):
         self._main_splitter.setSizes([300, 900])
         self._main_splitter.setStretchFactor(0, 0)
         self._main_splitter.setStretchFactor(1, 1)
+        root.addWidget(self._main_splitter, 1)
+
         # ---- status bar ----
         self._status = QStatusBar()
         self._status.showMessage("就绪")
         self.setStatusBar(self._status)
-
-        # ---- assemble body ----
-        body_layout.addWidget(self._main_splitter, 1)
-        root.addWidget(body, 1)
 
     # ========================================================================
     #  Status indicator helpers
@@ -507,7 +439,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #f0f2f5; border: 1px solid #2c3e50; }
+        QMainWindow { background: #f0f2f5; }
         QGroupBox {
             font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
