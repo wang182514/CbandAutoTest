@@ -372,14 +372,21 @@ class ReportGenerator:
             if bm is None:
                 errors.append(f"书签 {name} 未找到")
                 continue
-            # Find the parent paragraph, then the first text run
+            # Find the parent paragraph, find or create a text run
             p = bm.getparent()
-            r = p.find(f'{{{ns}}}r') if p is not None else None
-            t = r.find(f'{{{ns}}}t') if r is not None else None
-            if t is not None:
-                t.text = str(val)
-            else:
-                errors.append(f"书签 {name} 无文本")
+            if p is None:
+                errors.append(f"书签 {name} 无段落")
+                continue
+            r = p.find(f'{{{ns}}}r')
+            if r is None:
+                # create a new run if the paragraph is empty
+                r = p.makeelement(f'{{{ns}}}r', {})
+                p.append(r)
+            t = r.find(f'{{{ns}}}t')
+            if t is None:
+                t = r.makeelement(f'{{{ns}}}t', {})
+                r.append(t)
+            t.text = str(val)
 
         if errors:
             self._log.warning(f"  DOCX 书签问题 ({len(errors)}): {', '.join(errors[:5])}")
