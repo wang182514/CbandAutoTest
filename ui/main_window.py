@@ -127,25 +127,48 @@ class MainWindow(QMainWindow):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self._resize_edge = self._hit_resize_edge(event.pos())
-            if self._resize_edge:
-                self.windowHandle().startSystemResize(self._resize_edge)
+            edge = self._hit_resize_edge(event.pos())
+            if edge:
+                self._resizing = True
+                self._resize_edge = edge
+                self._resize_start_pos = event.globalPosition().toPoint()
+                self._resize_start_geo = self.geometry()
                 return
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        if getattr(self, '_resizing', False):
+            delta = event.globalPosition().toPoint() - self._resize_start_pos
+            geo = self._resize_start_geo
+            e = self._resize_edge
+            m = self.minimumSize()
+            if e & Qt.Edge.LeftEdge:
+                geo.setLeft(min(geo.left() + delta.x(), geo.right() - m.width()))
+            if e & Qt.Edge.RightEdge:
+                geo.setRight(max(geo.right() + delta.x(), geo.left() + m.width()))
+            if e & Qt.Edge.TopEdge:
+                geo.setTop(min(geo.top() + delta.y(), geo.bottom() - m.height()))
+            if e & Qt.Edge.BottomEdge:
+                geo.setBottom(max(geo.bottom() + delta.y(), geo.top() + m.height()))
+            self.setGeometry(geo)
+            return
+
         edge = self._hit_resize_edge(event.pos())
         if edge is None:
             self.setCursor(Qt.CursorShape.ArrowCursor)
-        elif edge in (Qt.Edge.TopEdge, Qt.Edge.BottomEdge):
+        elif edge == Qt.Edge.TopEdge or edge == Qt.Edge.BottomEdge:
             self.setCursor(Qt.CursorShape.SizeVerCursor)
-        elif edge in (Qt.Edge.LeftEdge, Qt.Edge.RightEdge):
+        elif edge == Qt.Edge.LeftEdge or edge == Qt.Edge.RightEdge:
             self.setCursor(Qt.CursorShape.SizeHorCursor)
         elif edge in (Qt.Edge.TopEdge | Qt.Edge.LeftEdge, Qt.Edge.BottomEdge | Qt.Edge.RightEdge):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
-        elif edge in (Qt.Edge.TopEdge | Qt.Edge.RightEdge, Qt.Edge.BottomEdge | Qt.Edge.LeftEdge):
+        else:
             self.setCursor(Qt.CursorShape.SizeBDiagCursor)
         super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._resizing = False
+        super().mouseReleaseEvent(event)
 
     def _hit_resize_edge(self, pos):
         m = self.RESIZE_MARGIN
