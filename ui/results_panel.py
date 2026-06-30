@@ -65,7 +65,7 @@ class _ResultCard(QFrame):
     def set_default_style(self):
         self.setStyleSheet(
             "_ResultCard { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }"
-            "_ResultCard:hover { border-color: #aaa; }"
+            "_ResultCard:hover { border-color: #aaa; background: #f5f5f5; }"
         )
         self._status_lbl.setText("—")
         self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #999;")
@@ -81,7 +81,7 @@ class _ResultCard(QFrame):
         self.setStyleSheet(
             f"_ResultCard {{ background: {bg}; border: 1px solid {clr}; "
             f"border-left: 4px solid {clr}; border-radius: 6px; }}"
-            f"_ResultCard:hover {{ border-color: {clr}; }}"
+            f"_ResultCard:hover {{ border-color: {clr}; background: {bg}; }}"
         )
         self._status_lbl.setText(badge)
         self._status_lbl.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {clr};")

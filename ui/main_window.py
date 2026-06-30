@@ -56,6 +56,9 @@ class MainWindow(QMainWindow):
         self._load_config_to_ui()
         self._restore_layout()
 
+        # ---- global stylesheet ----
+        self.setStyleSheet(self._global_qss())
+
         # ---- runner ----
         self._runner: TestRunner | None = None
 
@@ -106,9 +109,9 @@ class MainWindow(QMainWindow):
         g1.addLayout(self._status_row(self._ind_sa, self._lbl_sa))
         g1.addLayout(self._status_row(self._ind_switch, self._lbl_switch))
 
-        btn_connect = QPushButton("连接全部仪表")
+        btn_connect = QPushButton("🔌 连接全部仪表")
         btn_connect.clicked.connect(self._on_connect_all)
-        btn_disconnect = QPushButton("断开全部仪表")
+        btn_disconnect = QPushButton("⏏ 断开全部仪表")
         btn_disconnect.clicked.connect(self._on_disconnect_all)
         g1.addWidget(btn_connect)
         g1.addWidget(btn_disconnect)
@@ -139,7 +142,7 @@ class MainWindow(QMainWindow):
         grp_test = QGroupBox("测试控制")
         g3 = QVBoxLayout(grp_test)
 
-        self._btn_run_all = QPushButton("▶ 运行全部测试")
+        self._btn_run_all = QPushButton("▶  运行全部测试")
         self._btn_run_all.clicked.connect(lambda: self._run_tests(None))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         g3.addWidget(self._btn_run_all)
@@ -171,7 +174,7 @@ class MainWindow(QMainWindow):
                 g3.addWidget(btn)
                 self._test_buttons[tid] = btn
 
-        self._btn_stop = QPushButton("■ 停止")
+        self._btn_stop = QPushButton("■  停止")
         self._btn_stop.clicked.connect(self._on_stop)
         self._btn_stop.setEnabled(False)
         self._btn_stop.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -181,7 +184,7 @@ class MainWindow(QMainWindow):
         self._progress.setVisible(False)
         g3.addWidget(self._progress)
 
-        self._btn_report = QPushButton("📄 写入报告")
+        self._btn_report = QPushButton("📄  写入报告")
         self._btn_report.clicked.connect(self._on_write_report)
         self._btn_report.setEnabled(False)
         self._btn_report.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -259,12 +262,15 @@ class MainWindow(QMainWindow):
     def _set_status_indicator(self, indicator: QLabel, state: str):
         """Update indicator color: 'ok' green, 'error' red, 'idle' gray."""
         colors = {
-            "ok": "#4CAF50",
-            "error": "#F44336",
-            "idle": "#9E9E9E",
+            "ok": ("#4CAF50", "#81C784"),
+            "error": ("#F44336", "#E57373"),
+            "idle": ("#9E9E9E", "#BDBDBD"),
         }
+        base, glow = colors.get(state, colors["idle"])
         indicator.setStyleSheet(
-            f"background-color: {colors.get(state, colors['idle'])}; border-radius: 7px;"
+            f"background: qradialgradient(cx:0.35, cy:0.35, radius:0.5, "
+            f"fx:0.35, fy:0.35, stop:0 {glow}, stop:1 {base});"
+            f"border-radius: 7px;"
         )
 
     # ========================================================================
@@ -419,6 +425,54 @@ class MainWindow(QMainWindow):
             self._set_status_indicator(ind, "idle")
         self._log("=== 已断开全部仪表 ===")
         self._status.showMessage("已断开全部仪表")
+
+    # ========================================================================
+    #  Global stylesheet
+    # ========================================================================
+
+    @staticmethod
+    def _global_qss() -> str:
+        return """
+        QMainWindow { background: #f0f2f5; }
+        QGroupBox {
+            font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
+            margin-top: 8px; padding-top: 10px;
+        }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; }
+        QPushButton {
+            border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
+            background: #fafafa; min-height: 24px;
+        }
+        QPushButton:hover { background: #e3e8ee; border-color: #999; }
+        QPushButton:pressed { background: #d0d7e0; }
+        QPushButton:disabled { color: #aaa; background: #f5f5f5; }
+        QLineEdit {
+            border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
+        }
+        QLineEdit:focus { border-color: #5b9bd5; }
+        QProgressBar {
+            border: 1px solid #ccc; border-radius: 3px; text-align: center;
+            height: 14px;
+        }
+        QProgressBar::chunk { background: #5b9bd5; border-radius: 2px; }
+        QScrollArea { border: none; }
+        QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
+        QTextEdit {
+            border: 1px solid #ccc; border-radius: 3px;
+            background: #fafbfc; font-family: Consolas, 'Microsoft YaHei', monospace;
+        }
+        QTableWidget { border: 1px solid #d0d0d0; gridline-color: #e0e0e0; }
+        QHeaderView::section { background: #f0f0f0; padding: 4px; border: none; border-bottom: 1px solid #d0d0d0; }
+        QTextBrowser { border: 1px solid #d0d0d0; border-radius: 3px; background: #fff; }
+        QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:vertical { background: #c0c0c0; border-radius: 4px; min-height: 20px; }
+        QScrollBar::handle:vertical:hover { background: #a0a0a0; }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        QScrollBar:horizontal { height: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
+        QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+        """
 
     # ========================================================================
     #  Layout persistence
