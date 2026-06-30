@@ -55,6 +55,7 @@ def run_tx_gain(base: TestBase) -> TestResult:
         for kk, if_freq in enumerate(test_freqs):
             if base.stop_requested:
                 break
+            base.report_progress(kk + 1, len(test_freqs))
             rf_freq_mhz = if_freq + rf_offset
             rf_freq_ghz = rf_freq_mhz / 1000.0
 

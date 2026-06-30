@@ -73,6 +73,7 @@ def run_tx_flatness_pn(base: TestBase) -> TestResult:
             if base.stop_requested:
                 break
             time.sleep(1)
+            base.report_progress(wait_sec - kk + 1, wait_sec)
             base.log.info(f"  Max Hold 等待中... {kk}s")
 
         # ---- peak-to-peak measurement ----

@@ -45,6 +45,15 @@ class TestBase:
         self.cfg = config
         self.log = logger or _SimpleLogger()
         self._stop_flag: callable = lambda: False
+        self._progress_fn: callable = lambda cur, tot: None
+
+    # ---- progress reporting ------------------------------------------------
+
+    def set_progress_callback(self, fn: callable):
+        self._progress_fn = fn or (lambda c, t: None)
+
+    def report_progress(self, current: int, total: int):
+        self._progress_fn(current, total)
 
     # ---- stop control ------------------------------------------------------
 

@@ -62,6 +62,12 @@ class TestRunner(QThread):
 
             w = TEST_REGISTRY.get(name, {}).get("weight", 10)
 
+            # sub-progress callback: maps (sub_cur, sub_tot) → absolute progress
+            base.set_progress_callback(
+                lambda c, t, w=w, start=cumulative_weight:
+                    self.progress_signal.emit(start + int(w * c / max(t, 1)), total_weight)
+            )
+
             info = TEST_REGISTRY.get(name)
             if info is None:
                 display_name = name

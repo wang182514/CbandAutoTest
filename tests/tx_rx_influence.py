@@ -25,8 +25,10 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
 
         noise_off_list = []
         noise_on_list = []
+        sub_step = 0
+        n_pairs = len(tx_if_freqs)
 
-        for kk in range(len(tx_if_freqs)):
+        for kk in range(n_pairs):
             if base.stop_requested:
                 break
             rx_freq = rx_if_freqs[kk]
@@ -83,6 +85,8 @@ def run_tx_rx_influence(base: TestBase) -> TestResult:
                 if base.stop_requested:
                     break
                 time.sleep(1)
+                sub_step += 1
+                base.report_progress(sub_step, n_pairs * 10)
                 base.log.info(f"    {jj}s")
 
             noise_on = base.sa.sa_marker_noise(rx_freq)
