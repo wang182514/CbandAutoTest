@@ -295,6 +295,10 @@ class MainWindow(QMainWindow):
     def _load_config_to_ui(self):
         self._edit_sn.setText(self.config.get("serial_number", ""))
         self._chk_screenshot.setChecked(self.config.get("screenshot.enabled", True))
+        # Auto-fill test_date to today if not set
+        if not self.config.get("test_date"):
+            from datetime import date
+            self.config.set("test_date", date.today().strftime("%Y.%m.%d"))
 
     def _save_ui_to_config(self):
         self.config.set("serial_number", self._edit_sn.text())

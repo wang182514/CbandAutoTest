@@ -96,6 +96,7 @@ class SettingsDialog(QDialog):
         self._prod_env = self._add_line(l, "测试环境", c.product.test_env)
         self._prod_op = self._add_line(l, "操作员", c.product.operator)
         self._prod_sn = self._add_line(l, "序列号", c.serial_number)
+        self._prod_date = self._add_line(l, "测试日期", c.get("test_date", ""))
         return w
 
     def _tab_rf_path(self) -> QWidget:
@@ -351,6 +352,7 @@ class SettingsDialog(QDialog):
         c.product.test_env = self._prod_env.text()
         c.product.operator = self._prod_op.text()
         c.serial_number = self._prod_sn.text()
+        c.test_date = self._prod_date.text()
 
         # RF path
         for i, sp in enumerate(self._if_loss):
