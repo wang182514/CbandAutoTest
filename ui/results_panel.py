@@ -297,11 +297,15 @@ class ResultsPanel(QWidget):
         <style>
             body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px; }
             h3 { margin: 8px 0 6px 0; color: #333; }
-            table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
-            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
-            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
+            table { border-collapse: separate; border-spacing: 0; width: 100%;
+                    margin-bottom: 8px; border-radius: 6px; overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+            th, td { border: 1px solid #ddd; padding: 5px 9px; text-align: center; }
+            th { background: linear-gradient(#e8ecf1, #dce2e8); font-weight: bold;
+                 color: #444; border-bottom: 2px solid #c0c8d0; }
+            tr:not(.agg-row):hover td { background-color: #eef2f7; }
+            tr:nth-child(even):not(.agg-row) td { background-color: #fafbfc; }
+            .agg-row td { background-color: #f2f2f2; font-weight: bold; font-size: 12px; }
             .pass { color: #2e7d32; font-weight: bold; }
             .fail { color: #c62828; font-weight: bold; }
         </style>
