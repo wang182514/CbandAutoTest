@@ -61,7 +61,7 @@ class ResultsPanel(QWidget):
 
         # ---- dashboard row (compact chips) ----
         self._dashboard = QWidget()
-        self._dashboard.setFixedHeight(54)
+        self._dashboard.setFixedHeight(62)
         self._dash_layout = QHBoxLayout(self._dashboard)
         self._dash_layout.setContentsMargins(4, 2, 4, 2)
         self._dash_layout.setSpacing(6)
@@ -143,8 +143,8 @@ class ResultsPanel(QWidget):
                 "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; }"
                 "QFrame:hover { border-color: #aaa; }"
             )
-            chip.setFixedHeight(48)
-            chip.setMaximumWidth(170)
+            chip.setFixedHeight(56)
+            chip.setMaximumWidth(175)
             v = QVBoxLayout(chip)
             v.setContentsMargins(10, 4, 10, 4)
             v.setSpacing(2)
@@ -248,7 +248,12 @@ class ResultsPanel(QWidget):
                 title_lbl.setStyleSheet(
                     f"font-size: 13px; font-weight: bold; color: {clr}; border: none; background: transparent;"
                 )
-            chip._metrics_lbl.setText(self._summary_text(name, r["data"])[:40])
+            raw = self._summary_text(name, r["data"])
+            # split at "|" into 2 lines if present
+            if "|" in raw:
+                parts = [p.strip() for p in raw.split("|", 1)]
+                raw = "\n".join(parts)
+            chip._metrics_lbl.setText(raw)
 
     def _on_chip_clicked(self, name: str):
         self._show_detail(name)
