@@ -86,8 +86,19 @@ class MainWindow(QMainWindow):
     def _build_ui(self):
         central = QWidget()
         self.setCentralWidget(central)
-        root = QHBoxLayout(central)
+        wrapper = QVBoxLayout(central)
+        wrapper.setContentsMargins(0, 0, 0, 0)
+        wrapper.setSpacing(0)
+
+        # ---- accent bar below title bar ----
+        accent = QWidget()
+        accent.setFixedHeight(3)
+        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #1565C0,stop:1 #42A5F5);")
+        wrapper.addWidget(accent)
+
+        root = QHBoxLayout()
         root.setContentsMargins(6, 6, 6, 6)
+        wrapper.addLayout(root, 1)
 
         # ---- left panel (scrollable so it fits small screens) ----
         left_scroll = QScrollArea()
@@ -545,27 +556,6 @@ class MainWindow(QMainWindow):
         splitter_state = s.value("window/splitter")
         if splitter_state is not None:
             self._main_splitter.restoreState(splitter_state)
-
-    # ========================================================================
-    #  Window show (apply title bar color after HWND is valid)
-    # ========================================================================
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        try:
-            import ctypes
-            hwnd = int(self.winId())
-            if not hwnd:
-                return
-            # DWMWA_CAPTION_COLOR = 35 (Win10 1809+), COLORREF BGR
-            color = 0x00F9CA90  # #90caf9
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                hwnd, 35,
-                ctypes.byref(ctypes.c_uint32(color)),
-                ctypes.sizeof(ctypes.c_uint32),
-            )
-        except Exception:
-            pass
 
     # ========================================================================
     #  Window close
