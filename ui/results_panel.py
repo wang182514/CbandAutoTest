@@ -295,15 +295,13 @@ class ResultsPanel(QWidget):
     def _style() -> str:
         return """
         <style>
-            body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; }
-            h3 { margin: 6px 0 4px 0; color: #333; font-size: 13px; }
-            table { border-collapse: collapse; width: 100%; margin-bottom: 6px; }
-            th, td { border: 1px solid #ddd; padding: 3px 6px; text-align: center; }
-            th { background-color: #f2f2f2; font-weight: bold; font-size: 11px; }
+            body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px; }
+            h3 { margin: 8px 0 6px 0; color: #333; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
+            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
+            th { background-color: #f2f2f2; font-weight: bold; }
             tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
-            .agg-row td { background-color: #f2f2f2; font-weight: bold; font-size: 11px; border-bottom: 1px solid #ccc; }
-            .agg-pass td:first-child { border-left: 3px solid #4CAF50; }
-            .agg-fail td:first-child { border-left: 3px solid #F44336; }
+            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
             .pass { color: #2e7d32; font-weight: bold; }
             .fail { color: #c62828; font-weight: bold; }
         </style>
@@ -329,10 +327,6 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _badge(ok: bool) -> str:
         return '<span class="pass">✓</span>' if ok else '<span class="fail">✗</span>'
-
-    @staticmethod
-    def _agg_cls(ok: bool) -> str:
-        return "agg-row agg-pass" if ok else "agg-row agg-fail"
 
     def _detail_section(self, name: str, data: Dict[str, Any]) -> str:
         if name == "RX 噪声系数 + 增益":
@@ -368,15 +362,14 @@ class ResultsPanel(QWidget):
         lm2 = L.get("nf_mean_db", 1.2)
         lm3 = L.get("gain_mean_db", 50.0)
         lm4 = L.get("gain_flatness_db", 2.5)
-        AC = ResultsPanel._agg_cls
         agg = (
-            f"<tr class='{AC(nf_max <= lm1)}'><td>NF 最大值</td>"
+            f"<tr class='agg-row'><td>NF 最大值</td>"
             f"<td>{nf_max:.3f}</td><td>≤ {lm1:.2f}</td><td>{B(nf_max <= lm1)}</td></tr>"
-            f"<tr class='{AC(nf_mean < lm2)}'><td>NF 平均值</td>"
+            f"<tr class='agg-row'><td>NF 平均值</td>"
             f"<td>{nf_mean:.3f}</td><td>&lt; {lm2:.2f}</td><td>{B(nf_mean < lm2)}</td></tr>"
-            f"<tr class='{AC(g_mean > lm3)}'><td>增益平均值</td>"
+            f"<tr class='agg-row'><td>增益平均值</td>"
             f"<td>{g_mean:.3f}</td><td>&gt; {lm3:.2f}</td><td>{B(g_mean > lm3)}</td></tr>"
-            f"<tr class='{AC(g_flat < lm4)}'><td>增益平坦度</td>"
+            f"<tr class='agg-row'><td>增益平坦度</td>"
             f"<td>{g_flat:.3f}</td><td>&lt; {lm4:.2f}</td><td>{B(g_flat < lm4)}</td></tr>"
         )
         return (
@@ -526,9 +519,8 @@ class ResultsPanel(QWidget):
         max_delta = data.get("noise_delta_max")
         m_val = f"{max_delta:.3f}" if max_delta is not None else "—"
         m_ok = max_delta is not None and max_delta <= LIMIT
-        AC = ResultsPanel._agg_cls
         agg = (
-            f"<tr class='{AC(m_ok)}'><td>最大差异</td><td colspan='2'></td>"
+            f"<tr class='agg-row'><td>最大差异</td><td colspan='2'></td>"
             f"<td>{m_val}</td><td>≤ {LIMIT:.1f}</td><td>{B(m_ok)}</td></tr>"
         )
         return (
