@@ -127,16 +127,39 @@ def run_rx_nf_v2(base: TestBase) -> TestResult:
         messages.append(f"增益平坦度: {gain_diff:.2f} dB (限 {limits.gain_flatness_db} dB) {'PASS' if ok else 'FAIL'}")
         passed = passed and ok
 
-        # ---- out-of-band rejection (LOG ONLY, not in result.data) ----
+        # ---- out-of-band rejection (NF mode, LOG ONLY) ----
         if gain_oob is not None:
             rejection_db = gain_mean - gain_oob
-            base.log.info("─" * 30)
-            base.log.info(f"  带外 (IF 1.55GHz / RF 3.6GHz) 增益: {gain_oob:.2f} dB")
-            base.log.info(f"  带内平均增益: {gain_mean:.2f} dB")
-            base.log.info(f"  带外抑制: {rejection_db:.2f} dB (限 ≥ {limits.rejection_min_db} dB)")
-            base.log.info("─" * 30)
+            base.log.info("─" * 40)
+            base.log.info(f"  [NF 模式] 带外增益 (IF 1.55GHz): {gain_oob:.2f} dB")
+            base.log.info(f"  [NF 模式] 带内平均增益: {gain_mean:.2f} dB")
+            base.log.info(f"  [NF 模式] 带外抑制: {rejection_db:.2f} dB (限 ≥ {limits.rejection_min_db} dB)")
         else:
-            base.log.warning("  未能读取 IF 1.55 GHz 增益，跳过带外抑制计算")
+            base.log.warning("  未能读取 IF 1.55 GHz 增益，跳过 NF 带外抑制计算")
+
+        # ---- out-of-band rejection (SA mode, for comparison) ----
+        try:
+            base.log.info("  [SA 模式] 切换频谱仪至 SA 模式测量带外增益...")
+            base.sa.set_mode_sa()
+            time.sleep(0.5)
+            oob_if_mhz = 1550.0
+            base.sa.sa_configure_mhz(
+                start_mhz=oob_if_mhz - 5,
+                stop_mhz=oob_if_mhz + 5,
+                rbw_khz=30,
+                vbw_khz=30,
+                ref_level_dbm=-10,
+            )
+            base.sa.inst.write(":DET:TRAC1:POS ON")
+            time.sleep(0.3)
+            base.sa.inst.write("*CLS")
+            _, sa_gain_dbm = base.sa.sa_marker_peak()
+            sa_rejection = gain_mean - sa_gain_dbm
+            base.log.info(f"  [SA 模式] 带外增益 (IF 1.55GHz, marker peak): {sa_gain_dbm:.2f} dBm")
+            base.log.info(f"  [SA 模式] 带外抑制: {sa_rejection:.2f} dB (限 ≥ {limits.rejection_min_db} dB)")
+            base.log.info("─" * 40)
+        except Exception as e:
+            base.log.warning(f"  [SA 模式] 带外增益测量失败: {e}")
 
         result.passed = passed
         result.messages = messages
