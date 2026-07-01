@@ -111,7 +111,9 @@ class MainWindow(QMainWindow):
 
         btn_connect = QPushButton("🔌 连接全部仪表")
         btn_connect.clicked.connect(self._on_connect_all)
+        btn_connect.setStyleSheet("QPushButton { background: #e8f5e9; color: #2e7d32; } QPushButton:hover { background: #c8e6c9; }")
         btn_disconnect = QPushButton("⏏ 断开全部仪表")
+        btn_disconnect.setStyleSheet("QPushButton { background: #f5f5f5; color: #666; } QPushButton:hover { background: #e0e0e0; }")
         btn_disconnect.clicked.connect(self._on_disconnect_all)
         g1.addWidget(btn_connect)
         g1.addWidget(btn_disconnect)
@@ -145,6 +147,7 @@ class MainWindow(QMainWindow):
         self._btn_run_all = QPushButton("▶  运行全部测试")
         self._btn_run_all.clicked.connect(lambda b=self._btn_run_all: self._run_tests(None, b))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._btn_run_all.setStyleSheet("QPushButton { background: #e3f2fd; color: #1565C0; } QPushButton:hover { background: #bbdefb; }")
         g3.addWidget(self._btn_run_all)
 
         # Individual test buttons — auto-generated from plugin registry
@@ -180,8 +183,8 @@ class MainWindow(QMainWindow):
         self._btn_stop.setEnabled(False)
         self._btn_stop.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._btn_stop.setStyleSheet(
-            "QPushButton { border-left: 3px solid #E57373; }"
-            "QPushButton:enabled { border-left-color: #F44336; }"
+            "QPushButton { background: #ffebee; color: #c62828; }"
+            "QPushButton:enabled:hover { background: #ffcdd2; }"
         )
         g3.addWidget(self._btn_stop)
 
@@ -194,6 +197,7 @@ class MainWindow(QMainWindow):
         self._btn_report.clicked.connect(self._on_write_report)
         self._btn_report.setEnabled(False)
         self._btn_report.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._btn_report.setStyleSheet("QPushButton { background: #fff3e0; color: #e65100; } QPushButton:enabled:hover { background: #ffe0b2; }")
         g3.addWidget(self._btn_report)
         left.addWidget(grp_test)
 
