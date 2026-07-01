@@ -144,11 +144,13 @@ class ResultsPanel(QWidget):
 
             short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:14]
             lbl = QLabel(short)
-            lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #444; border: none; background: transparent;")
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #444; border: none; background: transparent;")
             v.addWidget(lbl)
 
             metrics_lbl = QLabel("")
-            metrics_lbl.setStyleSheet("font-size: 9px; color: #888; border: none; background: transparent;")
+            metrics_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            metrics_lbl.setStyleSheet("font-size: 10px; color: #888; border: none; background: transparent;")
             v.addWidget(metrics_lbl)
 
             chip.mousePressEvent = lambda e, n=name: self._on_chip_clicked(n)
@@ -182,16 +184,27 @@ class ResultsPanel(QWidget):
 
         total = len(self._results)
         passed = sum(1 for r in self._results.values() if r["passed"])
+        failed = total - passed
         stopped = sum(1 for r in self._results.values() if r.get("stopped"))
+        failed_real = failed - stopped  # real failures excluding stopped
+
+        parts = [f"共 {total} 项"]
+        if passed:
+            parts.append(f"✓ {passed} 合格")
+        if failed_real:
+            parts.append(f"✗ {failed_real} 不合格")
+        if stopped:
+            parts.append(f"⊘ {stopped} 终止")
+        text = "  ·  ".join(parts)
 
         if stopped > 0:
-            bg, fg, text = "#ffe0b2", "#e65100", f"⊘  {passed}/{total} 通过，{stopped} 项已终止"
+            bg, fg = "#ffe0b2", "#e65100"
         elif passed == total:
-            bg, fg, text = "#c8e6c9", "#2e7d32", f"✓  全部合格 — {passed}/{total} 通过"
+            bg, fg = "#c8e6c9", "#2e7d32"
         elif passed > 0:
-            bg, fg, text = "#fff9c4", "#f57f17", f"⚠  {passed}/{total} 通过，{total - passed} 项不合格"
+            bg, fg = "#fff9c4", "#f57f17"
         else:
-            bg, fg, text = "#ffcdd2", "#c62828", f"✗  全部不合格 — 0/{total} 通过"
+            bg, fg = "#ffcdd2", "#c62828"
 
         self._banner.setText(text)
         self._banner.setStyleSheet(
