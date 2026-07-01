@@ -386,7 +386,17 @@ class ReportGenerator:
             if t is None:
                 t = r.makeelement(f'{{{ns}}}t', {})
                 r.append(t)
-            t.text = str(val)
+
+            # Handle multi-line text: split by \n, insert <w:br/> between lines
+            lines = str(val).split('\n')
+            t.text = lines[0]
+            for line in lines[1:]:
+                br = r.makeelement(f'{{{ns}}}br', {})
+                r.append(br)
+                next_t = r.makeelement(f'{{{ns}}}t', {})
+                next_t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+                next_t.text = line
+                r.append(next_t)
 
         if errors:
             self._log.warning(f"  DOCX 书签问题 ({len(errors)}): {', '.join(errors[:5])}")
