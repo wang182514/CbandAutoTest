@@ -450,26 +450,6 @@ class MainWindow(QMainWindow):
         self._status.showMessage("已断开全部仪表")
 
     # ========================================================================
-    #  Windows acrylic title bar
-    # ========================================================================
-
-    def showEvent(self, event):
-        """Apply acrylic after window is shown (needs valid HWND)."""
-        super().showEvent(event)
-        try:
-            import ctypes
-            hwnd = int(self.winId())
-            DWMWA_SYSTEMBACKDROP_TYPE = 38
-            DWMSBT_TRANSIENTWINDOW = 3
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                hwnd, DWMWA_SYSTEMBACKDROP_TYPE,
-                ctypes.byref(ctypes.c_int(DWMSBT_TRANSIENTWINDOW)),
-                ctypes.sizeof(ctypes.c_int),
-            )
-        except Exception:
-            pass
-
-    # ========================================================================
     #  Global stylesheet
     # ========================================================================
 
