@@ -25,8 +25,8 @@ def sanitize_results(all_results: list, config) -> list:
         ("nf_max_db",         cfg.test_rx_nf.limits.nf_max_db,               "le", "nf_max_db"),
         ("nf_mean_db",        cfg.test_rx_nf.limits.nf_mean_db,              "lt", "nf_mean_db"),
         ("gain_mean_db",      cfg.test_rx_nf.limits.gain_mean_db,            "gt", "gain_mean_db"),
-        ("gain_flatness_db",  cfg.test_rx_nf.limits.gain_flatness_db,        "lt", "gain_flatness_db"),
-        ("tx_flatness_db",    cfg.test_tx_flatness_pn.limits.flatness_db,    "lt", "tx_flatness_db"),
+        ("gain_flatness_db",  2.0,                                            "lt", "gain_flatness_db"),
+        ("tx_flatness_db",    2.0,                                            "lt", "tx_flatness_db"),
         ("noise_delta_max",   cfg.test_tx_rx_influence.limit.noise_floor_delta_db, "le", "noise_delta_max"),
     ]
 
