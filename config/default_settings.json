@@ -96,6 +96,15 @@
         }
     },
 
+    "test_rx_oob_sa": {
+        "_comment": "RX 带外抑制 (SA 模式, 待验证) — 频谱仪 SA 模式单点测 IF 1.55GHz",
+        "enabled": true,
+        "switch_config": [1, 0, 0, 0],
+        "limit": {
+            "rejection_min_db": 55.0
+        }
+    },
+
     "test_tx_gain": {
         "enabled": true,
         "template_name": "state_TX Pout.state",
