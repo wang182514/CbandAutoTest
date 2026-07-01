@@ -74,6 +74,21 @@ class MainWindow(QMainWindow):
         p.end()
         self.setWindowIcon(QIcon(pm))
 
+        # ---- light blue title bar (Win10 1809+) ----
+        try:
+            import ctypes
+            hwnd = int(self.winId())
+            DWMWA_CAPTION_COLOR = 35
+            # #e8f0fe → COLORREF = 0x00fef0e8 (BGR)
+            color = 0x00FEF0E8
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, DWMWA_CAPTION_COLOR,
+                ctypes.byref(ctypes.c_uint32(color)),
+                ctypes.sizeof(ctypes.c_uint32),
+            )
+        except Exception:
+            pass
+
         # ---- runner ----
         self._runner: TestRunner | None = None
 
