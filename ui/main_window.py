@@ -74,20 +74,7 @@ class MainWindow(QMainWindow):
         p.end()
         self.setWindowIcon(QIcon(pm))
 
-        # ---- light blue title bar (Win10 1809+) ----
-        try:
-            import ctypes
-            hwnd = int(self.winId())
-            DWMWA_CAPTION_COLOR = 35
-            # #90caf9 → COLORREF = 0x00f9ca90 (BGR)
-            color = 0x00F9CA90
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                hwnd, DWMWA_CAPTION_COLOR,
-                ctypes.byref(ctypes.c_uint32(color)),
-                ctypes.sizeof(ctypes.c_uint32),
-            )
-        except Exception:
-            pass
+
 
         # ---- runner ----
         self._runner: TestRunner | None = None
@@ -558,6 +545,27 @@ class MainWindow(QMainWindow):
         splitter_state = s.value("window/splitter")
         if splitter_state is not None:
             self._main_splitter.restoreState(splitter_state)
+
+    # ========================================================================
+    #  Window show (apply title bar color after HWND is valid)
+    # ========================================================================
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        try:
+            import ctypes
+            hwnd = int(self.winId())
+            if not hwnd:
+                return
+            # DWMWA_CAPTION_COLOR = 35 (Win10 1809+), COLORREF BGR
+            color = 0x00F9CA90  # #90caf9
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, 35,
+                ctypes.byref(ctypes.c_uint32(color)),
+                ctypes.sizeof(ctypes.c_uint32),
+            )
+        except Exception:
+            pass
 
     # ========================================================================
     #  Window close
