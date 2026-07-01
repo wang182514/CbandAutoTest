@@ -13,14 +13,15 @@ from .plugin import register_test
 def run_rx_oob_sa(base: TestBase) -> TestResult:
     result = TestResult(test_name="RX 带外抑制 (SA)")
     cfg = base.cfg.test_rx_oob_sa
+    pn_cfg = base.cfg.test_rx_pn  # use RX PN switch path
 
     try:
         base.log.info("─" * 40)
         base.log.info("  [SA 模式] 带外抑制测试 (待验证)")
         base.log.info("─" * 40)
 
-        # ---- switches & power ----
-        base.set_switches(cfg.switch_config)
+        # ---- switches & power ---- (use RX PN switch path: [0,0,0,0])
+        base.set_switches(pn_cfg.switch_config)
         base.rx_pwr.set_output(True)
         time.sleep(0.3)
         base.log.info("接收电源已开启")
