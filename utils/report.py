@@ -328,7 +328,7 @@ class ReportGenerator:
             "product_model": self._cfg.product.model,
             "test_date": self._cfg.get("test_date", ""),
             "test_env": self._cfg.product.test_env,
-            "serial_number": sn,
+            "serial_number": sn.replace("_toB", ""),
             "operator": self._cfg.product.operator,
             # rx
             "rx_current": F(d, "rx_current_a", "A"),
