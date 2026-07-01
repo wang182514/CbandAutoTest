@@ -59,17 +59,6 @@ class MainWindow(QMainWindow):
         # ---- global stylesheet ----
         self.setStyleSheet(self._global_qss())
 
-        # ---- dark title bar (Win10+) ----
-        try:
-            import ctypes
-            DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-            ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                int(self.winId()), DWMWA_USE_IMMERSIVE_DARK_MODE,
-                ctypes.byref(ctypes.c_int(1)), ctypes.sizeof(ctypes.c_int),
-            )
-        except Exception:
-            pass
-
         # ---- window icon ----
         from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
         pm = QPixmap(32, 32)
@@ -482,12 +471,13 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #f0f2f5; border: 2px solid #1565C0; }
+        QMainWindow { background: #e8f0fe; border: 2px solid #90caf9; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
+            font-weight: bold; border: 1px solid #bbdefb; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
+            background: rgba(255,255,255,0.6);
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #5b9bd5; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #64b5f6; }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
             background: #fafafa; min-height: 24px;
@@ -503,7 +493,7 @@ class MainWindow(QMainWindow):
             border: 1px solid #ccc; border-radius: 3px; text-align: center;
             height: 14px;
         }
-        QProgressBar::chunk { background: #5b9bd5; border-radius: 2px; }
+        QProgressBar::chunk { background: #64b5f6; border-radius: 2px; }
         QScrollArea { border: none; }
         QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
         QTextEdit {
@@ -523,7 +513,7 @@ class MainWindow(QMainWindow):
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         /* -- splitter handle -- */
         QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
-        QSplitter::handle:hover { background: #5b9bd5; }
+        QSplitter::handle:hover { background: #64b5f6; }
         /* -- tab widget -- */
         QTabWidget::pane { border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; }
         QTabBar::tab {
