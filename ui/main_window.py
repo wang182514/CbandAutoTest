@@ -111,7 +111,6 @@ class MainWindow(QMainWindow):
 
         btn_connect = QPushButton("🔌 连接全部仪表")
         btn_connect.clicked.connect(self._on_connect_all)
-        btn_connect.setStyleSheet("QPushButton { border-left: 3px solid #4CAF50; } QPushButton:hover { border-left-color: #388E3C; }")
         btn_disconnect = QPushButton("⏏ 断开全部仪表")
         btn_disconnect.clicked.connect(self._on_disconnect_all)
         g1.addWidget(btn_connect)
@@ -146,7 +145,6 @@ class MainWindow(QMainWindow):
         self._btn_run_all = QPushButton("▶  运行全部测试")
         self._btn_run_all.clicked.connect(lambda b=self._btn_run_all: self._run_tests(None, b))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._btn_run_all.setStyleSheet("QPushButton { border-left: 3px solid #42A5F5; } QPushButton:hover { border-left-color: #1E88E5; }")
         g3.addWidget(self._btn_run_all)
 
         # Individual test buttons — auto-generated from plugin registry
@@ -196,7 +194,6 @@ class MainWindow(QMainWindow):
         self._btn_report.clicked.connect(self._on_write_report)
         self._btn_report.setEnabled(False)
         self._btn_report.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._btn_report.setStyleSheet("QPushButton { border-left: 3px solid #FF9800; } QPushButton:hover:enabled { border-left-color: #F57C00; }")
         g3.addWidget(self._btn_report)
         left.addWidget(grp_test)
 
