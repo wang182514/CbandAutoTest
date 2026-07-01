@@ -79,8 +79,8 @@ class MainWindow(QMainWindow):
             import ctypes
             hwnd = int(self.winId())
             DWMWA_CAPTION_COLOR = 35
-            # #e8f0fe → COLORREF = 0x00fef0e8 (BGR)
-            color = 0x00FEF0E8
+            # #90caf9 → COLORREF = 0x00f9ca90 (BGR)
+            color = 0x00F9CA90
             ctypes.windll.dwmapi.DwmSetWindowAttribute(
                 hwnd, DWMWA_CAPTION_COLOR,
                 ctypes.byref(ctypes.c_uint32(color)),
