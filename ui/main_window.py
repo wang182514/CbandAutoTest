@@ -59,6 +59,32 @@ class MainWindow(QMainWindow):
         # ---- global stylesheet ----
         self.setStyleSheet(self._global_qss())
 
+        # ---- dark title bar (Win10+) ----
+        try:
+            import ctypes
+            DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                int(self.winId()), DWMWA_USE_IMMERSIVE_DARK_MODE,
+                ctypes.byref(ctypes.c_int(1)), ctypes.sizeof(ctypes.c_int),
+            )
+        except Exception:
+            pass
+
+        # ---- window icon ----
+        from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+        pm = QPixmap(32, 32)
+        pm.fill(Qt.GlobalColor.transparent)
+        p = QPainter(pm)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setBrush(QColor("#1565C0"))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawEllipse(2, 2, 28, 28)
+        p.setPen(QColor("#fff"))
+        p.setFont(QFont("Microsoft YaHei", 14, QFont.Weight.Bold))
+        p.drawText(pm.rect(), Qt.AlignmentFlag.AlignCenter, "C")
+        p.end()
+        self.setWindowIcon(QIcon(pm))
+
         # ---- runner ----
         self._runner: TestRunner | None = None
 
@@ -456,7 +482,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #f0f2f5; }
+        QMainWindow { background: #f0f2f5; border: 2px solid #1565C0; }
         QGroupBox {
             font-weight: bold; border: 1px solid #d0d0d0; border-radius: 6px;
             margin-top: 8px; padding-top: 10px;
