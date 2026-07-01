@@ -25,80 +25,9 @@ from typing import Any, Dict, List
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QTextBrowser, QPushButton, QFileDialog, QMessageBox,
-    QLabel, QFrame, QScrollArea, QGridLayout, QSizePolicy,
-    QGraphicsDropShadowEffect,
+    QLabel, QFrame, QScrollArea, QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
-
-
-class _ResultCard(QFrame):
-    """A clickable card showing one test's status and key metrics."""
-
-    clicked = Signal(str)
-
-    def __init__(self, test_name: str, parent=None):
-        super().__init__(parent)
-        self._test_name = test_name
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumHeight(72)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(10, 7, 10, 7)
-        lay.setSpacing(3)
-
-        self._name_lbl = QLabel(test_name)
-        self._name_lbl.setStyleSheet("font-weight: bold; font-size: 13px;")
-        lay.addWidget(self._name_lbl)
-
-        self._status_lbl = QLabel("—")
-        self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold;")
-        lay.addWidget(self._status_lbl)
-
-        self._metric_lbl = QLabel("")
-        self._metric_lbl.setStyleSheet("color: #666; font-size: 11px;")
-        self._metric_lbl.setWordWrap(True)
-        lay.addWidget(self._metric_lbl)
-
-        # subtle drop shadow
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(8)
-        shadow.setOffset(1, 2)
-        shadow.setColor(QColor(0, 0, 0, 40))
-        self.setGraphicsEffect(shadow)
-
-        self.set_default_style()
-
-    def set_default_style(self):
-        self.setStyleSheet(
-            "_ResultCard { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; }"
-            "_ResultCard:hover { border-color: #aaa; background: #f5f5f5; }"
-        )
-        self._status_lbl.setText("—")
-        self._status_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #999;")
-
-    def set_passed(self, passed: bool, metric_text: str = "", stopped: bool = False):
-        if stopped:
-            clr, bg, badge = "#e65100", "#fff3e0", "⊘  已终止"
-        elif passed:
-            clr, bg, badge = "#2e7d32", "#e8f5e9", "✓  PASS"
-        else:
-            clr, bg, badge = "#c62828", "#ffebee", "✗  FAIL"
-
-        self.setStyleSheet(
-            f"_ResultCard {{ background: {bg}; border: 1px solid {clr}; "
-            f"border-left: 4px solid {clr}; border-radius: 6px; }}"
-            f"_ResultCard:hover {{ border-color: {clr}; background: {bg}; }}"
-        )
-        self._status_lbl.setText(badge)
-        self._status_lbl.setStyleSheet(f"font-size: 16px; font-weight: bold; color: {clr};")
-        self._metric_lbl.setText(metric_text)
-
-    def mousePressEvent(self, event):
-        self.clicked.emit(self._test_name)
-        super().mousePressEvent(event)
 
 
 class ResultsPanel(QWidget):
@@ -109,7 +38,7 @@ class ResultsPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._results: Dict[str, Dict[str, Any]] = {}
-        self._cards: Dict[str, _ResultCard] = {}
+        self._dashboard_chips: Dict[str, QFrame] = {}
         self._build_ui()
 
     # ========================================================================
@@ -128,19 +57,13 @@ class ResultsPanel(QWidget):
         self._banner.setStyleSheet("font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;")
         layout.addWidget(self._banner)
 
-        # ---- card grid (scrollable) ----
-        self._card_scroll = QScrollArea()
-        self._card_scroll.setWidgetResizable(True)
-        self._card_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._card_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self._card_scroll.setMaximumHeight(250)
-
-        self._card_container = QWidget()
-        self._card_grid = QGridLayout(self._card_container)
-        self._card_grid.setContentsMargins(2, 2, 2, 2)
-        self._card_grid.setSpacing(6)
-        self._card_scroll.setWidget(self._card_container)
-        layout.addWidget(self._card_scroll)
+        # ---- dashboard row (compact chips) ----
+        self._dashboard = QWidget()
+        self._dashboard.setFixedHeight(36)
+        self._dash_layout = QHBoxLayout(self._dashboard)
+        self._dash_layout.setContentsMargins(4, 2, 4, 2)
+        self._dash_layout.setSpacing(6)
+        layout.addWidget(self._dashboard)
 
         # ---- detail browser ----
         self._detail = QTextBrowser()
@@ -177,7 +100,7 @@ class ResultsPanel(QWidget):
             "data": data,
             "time": datetime.now().strftime("%H:%M:%S"),
         }
-        self._refresh_cards()
+        self._refresh_dashboard()
         self._update_banner()
         self._update_button_state()
         self._show_detail(test_name)
@@ -185,26 +108,54 @@ class ResultsPanel(QWidget):
     def clear_results(self):
         """Clear all displayed results."""
         self._results.clear()
-        for card in self._cards.values():
-            card.set_default_style()
+        for chip in self._dashboard_chips.values():
+            chip.setStyleSheet(
+                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 10px; }"
+            )
+            if hasattr(chip, '_status_lbl'):
+                chip._status_lbl.setText("—")
+                chip._status_lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #999; border: none; background: transparent;")
         self._banner.setVisible(False)
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
         self.cleared.emit()
 
     def set_test_names(self, names: List[str]):
-        """Pre-populate card placeholders before tests start."""
-        for card in self._cards.values():
-            self._card_grid.removeWidget(card)
-            card.deleteLater()
-        self._cards.clear()
+        """Pre-populate dashboard chips before tests start."""
+        for chip in self._dashboard_chips.values():
+            self._dash_layout.removeWidget(chip)
+            chip.deleteLater()
+        self._dashboard_chips.clear()
 
-        cols = 2
-        for i, name in enumerate(names):
-            card = _ResultCard(name)
-            card.clicked.connect(self._on_card_clicked)
-            self._cards[name] = card
-            self._card_grid.addWidget(card, i // cols, i % cols)
+        for name in names:
+            chip = QFrame()
+            chip.setFrameShape(QFrame.Shape.StyledPanel)
+            chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            chip.setStyleSheet(
+                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 10px; }"
+                "QFrame:hover { border-color: #aaa; }"
+            )
+            chip.setFixedHeight(28)
+            h = QHBoxLayout(chip)
+            h.setContentsMargins(8, 0, 8, 0)
+            h.setSpacing(4)
+
+            short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:12]
+            lbl = QLabel(short)
+            lbl.setStyleSheet("font-size: 11px; color: #555; border: none; background: transparent;")
+            h.addWidget(lbl)
+
+            status_lbl = QLabel("—")
+            status_lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #999; border: none; background: transparent;")
+            h.addWidget(status_lbl)
+
+            chip.mousePressEvent = lambda e, n=name: self._on_chip_clicked(n)
+            self._dashboard_chips[name] = chip
+            chip._status_lbl = status_lbl
+            self._dash_layout.addWidget(chip)
+
+    def _on_chip_clicked(self, name: str):
+        self._show_detail(name)
 
     def results(self) -> List[Dict[str, Any]]:
         """Return results in the same shape used by ReportGenerator."""
@@ -248,25 +199,31 @@ class ResultsPanel(QWidget):
         self._banner.setVisible(True)
 
     # ========================================================================
-    #  Card grid
+    #  Dashboard chips
     # ========================================================================
 
-    def _refresh_cards(self):
+    def _refresh_dashboard(self):
         for name, r in self._results.items():
-            card = self._cards.get(name)
-            if card is None:
+            chip = self._dashboard_chips.get(name)
+            if chip is None or not hasattr(chip, '_status_lbl'):
                 continue
-            try:
-                card.set_passed(
-                    r["passed"],
-                    self._summary_text(name, r["data"]),
-                    r.get("stopped", False),
-                )
-            except Exception:
-                # If summary_text crashes (e.g. empty data), at least show the badge
-                card.set_passed(r["passed"], "—", r.get("stopped", False))
+            if r.get("stopped"):
+                clr, bg, badge = "#e65100", "#fff3e0", "⊘"
+            elif r["passed"]:
+                clr, bg, badge = "#2e7d32", "#e8f5e9", "✓"
+            else:
+                clr, bg, badge = "#c62828", "#ffebee", "✗"
+            chip.setStyleSheet(
+                f"QFrame {{ background: {bg}; border: 1px solid {clr}; "
+                f"border-radius: 4px; padding: 2px 10px; }}"
+                f"QFrame:hover {{ border-color: {clr}; }}"
+            )
+            chip._status_lbl.setText(badge)
+            chip._status_lbl.setStyleSheet(
+                f"font-size: 11px; font-weight: bold; color: {clr}; border: none; background: transparent;"
+            )
 
-    def _on_card_clicked(self, name: str):
+    def _on_chip_clicked(self, name: str):
         self._show_detail(name)
 
     # ========================================================================
