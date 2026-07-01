@@ -47,14 +47,14 @@ def run_rx_oob_sa(base: TestBase) -> TestResult:
         )
         base.sa.inst.write("*CLS")
         time.sleep(0.5)
-        freq_mhz, amp_dbm = base.sa.sa_marker_peak()
+        freq_hz, amp_dbm = base.sa.sa_marker_peak()
 
         # Gain = Pout (SA) − Pin (VSG) − line loss
         rf_loss = base.cfg.rf_path.tx_rf_line_loss
         rf_loss_avg = sum(rf_loss) / len(rf_loss) if rf_loss else 0
         sa_gain_db = amp_dbm - vsg_power - rf_loss_avg
 
-        base.log.info(f"  [SA 模式] IF {freq_mhz:.1f} MHz 峰值: {amp_dbm:.2f} dBm")
+        base.log.info(f"  [SA 模式] IF {freq_hz/1e6:.2f} MHz 峰值: {amp_dbm:.2f} dBm")
         base.log.info(f"  [SA 模式] 带外增益: {sa_gain_db:.2f} dB (Pin={vsg_power:.1f}, 线损{rf_loss_avg:.1f})")
         base.log.info("─" * 40)
 
@@ -66,7 +66,7 @@ def run_rx_oob_sa(base: TestBase) -> TestResult:
         result.messages = ["待验证 — 仅日志输出"]
         result.data["oob_sa_gain_db"] = sa_gain_db
         result.data["oob_sa_peak_dbm"] = amp_dbm
-        result.data["oob_sa_freq_mhz"] = freq_mhz
+        result.data["oob_sa_freq_mhz"] = freq_hz / 1e6
 
     except Exception as e:
         result.passed = False
