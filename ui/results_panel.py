@@ -51,10 +51,12 @@ class ResultsPanel(QWidget):
         layout.setSpacing(4)
 
         # ---- banner ----
-        self._banner = QLabel()
+        self._banner = QLabel("共 0 项")
         self._banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._banner.setVisible(False)
-        self._banner.setStyleSheet("font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;")
+        self._banner.setStyleSheet(
+            "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
+            "background: #e3f2fd; color: #1565C0;"
+        )
         layout.addWidget(self._banner)
 
         # ---- dashboard row (compact chips) ----
@@ -117,7 +119,11 @@ class ResultsPanel(QWidget):
             tl = chip.findChild(QLabel)
             if tl:
                 tl.setStyleSheet("font-size: 13px; font-weight: bold; color: #444; border: none; background: transparent;")
-        self._banner.setVisible(False)
+        self._banner.setText("共 0 项")
+        self._banner.setStyleSheet(
+            "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
+            "background: #e3f2fd; color: #1565C0;"
+        )
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
         self.cleared.emit()
@@ -157,6 +163,8 @@ class ResultsPanel(QWidget):
             self._dashboard_chips[name] = chip
             chip._metrics_lbl = metrics_lbl
             self._dash_layout.addWidget(chip)
+
+        self._banner.setText(f"共 {len(names)} 项")
 
     def _on_chip_clicked(self, name: str):
         self._show_detail(name)
