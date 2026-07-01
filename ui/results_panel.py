@@ -59,7 +59,7 @@ class ResultsPanel(QWidget):
 
         # ---- dashboard row (compact chips) ----
         self._dashboard = QWidget()
-        self._dashboard.setFixedHeight(36)
+        self._dashboard.setFixedHeight(54)
         self._dash_layout = QHBoxLayout(self._dashboard)
         self._dash_layout.setContentsMargins(4, 2, 4, 2)
         self._dash_layout.setSpacing(6)
@@ -110,11 +110,13 @@ class ResultsPanel(QWidget):
         self._results.clear()
         for chip in self._dashboard_chips.values():
             chip.setStyleSheet(
-                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 10px; }"
+                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; }"
             )
-            if hasattr(chip, '_status_lbl'):
-                chip._status_lbl.setText("—")
-                chip._status_lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #999; border: none; background: transparent;")
+            if hasattr(chip, '_metrics_lbl'):
+                chip._metrics_lbl.setText("")
+            tl = chip.findChild(QLabel)
+            if tl:
+                tl.setStyleSheet("font-size: 13px; font-weight: bold; color: #444; border: none; background: transparent;")
         self._banner.setVisible(False)
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
@@ -132,26 +134,26 @@ class ResultsPanel(QWidget):
             chip.setFrameShape(QFrame.Shape.StyledPanel)
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
             chip.setStyleSheet(
-                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 2px 10px; }"
+                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; }"
                 "QFrame:hover { border-color: #aaa; }"
             )
-            chip.setFixedHeight(28)
-            h = QHBoxLayout(chip)
-            h.setContentsMargins(8, 0, 8, 0)
-            h.setSpacing(4)
+            chip.setFixedHeight(48)
+            v = QVBoxLayout(chip)
+            v.setContentsMargins(10, 4, 10, 4)
+            v.setSpacing(2)
 
-            short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:12]
+            short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:14]
             lbl = QLabel(short)
-            lbl.setStyleSheet("font-size: 11px; color: #555; border: none; background: transparent;")
-            h.addWidget(lbl)
+            lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #444; border: none; background: transparent;")
+            v.addWidget(lbl)
 
-            status_lbl = QLabel("—")
-            status_lbl.setStyleSheet("font-size: 11px; font-weight: bold; color: #999; border: none; background: transparent;")
-            h.addWidget(status_lbl)
+            metrics_lbl = QLabel("")
+            metrics_lbl.setStyleSheet("font-size: 9px; color: #888; border: none; background: transparent;")
+            v.addWidget(metrics_lbl)
 
             chip.mousePressEvent = lambda e, n=name: self._on_chip_clicked(n)
             self._dashboard_chips[name] = chip
-            chip._status_lbl = status_lbl
+            chip._metrics_lbl = metrics_lbl
             self._dash_layout.addWidget(chip)
 
     def _on_chip_clicked(self, name: str):
@@ -205,23 +207,26 @@ class ResultsPanel(QWidget):
     def _refresh_dashboard(self):
         for name, r in self._results.items():
             chip = self._dashboard_chips.get(name)
-            if chip is None or not hasattr(chip, '_status_lbl'):
+            if chip is None or not hasattr(chip, '_metrics_lbl'):
                 continue
             if r.get("stopped"):
-                clr, bg, badge = "#e65100", "#fff3e0", "⊘"
+                clr, bg = "#e65100", "#fff3e0"
             elif r["passed"]:
-                clr, bg, badge = "#2e7d32", "#e8f5e9", "✓"
+                clr, bg = "#2e7d32", "#e8f5e9"
             else:
-                clr, bg, badge = "#c62828", "#ffebee", "✗"
+                clr, bg = "#c62828", "#ffebee"
             chip.setStyleSheet(
                 f"QFrame {{ background: {bg}; border: 1px solid {clr}; "
-                f"border-radius: 4px; padding: 2px 10px; }}"
+                f"border-radius: 5px; }}"
                 f"QFrame:hover {{ border-color: {clr}; }}"
             )
-            chip._status_lbl.setText(badge)
-            chip._status_lbl.setStyleSheet(
-                f"font-size: 11px; font-weight: bold; color: {clr}; border: none; background: transparent;"
-            )
+            # Update title label color
+            title_lbl = chip.findChild(QLabel)
+            if title_lbl:
+                title_lbl.setStyleSheet(
+                    f"font-size: 13px; font-weight: bold; color: {clr}; border: none; background: transparent;"
+                )
+            chip._metrics_lbl.setText(self._summary_text(name, r["data"]))
 
     def _on_chip_clicked(self, name: str):
         self._show_detail(name)
