@@ -144,6 +144,7 @@ class ResultsPanel(QWidget):
                 "QFrame:hover { border-color: #aaa; }"
             )
             chip.setFixedHeight(48)
+            chip.setMaximumWidth(170)
             v = QVBoxLayout(chip)
             v.setContentsMargins(10, 4, 10, 4)
             v.setSpacing(2)
@@ -247,7 +248,7 @@ class ResultsPanel(QWidget):
                 title_lbl.setStyleSheet(
                     f"font-size: 13px; font-weight: bold; color: {clr}; border: none; background: transparent;"
                 )
-            chip._metrics_lbl.setText(self._summary_text(name, r["data"]))
+            chip._metrics_lbl.setText(self._summary_text(name, r["data"])[:40])
 
     def _on_chip_clicked(self, name: str):
         self._show_detail(name)
