@@ -642,9 +642,9 @@ class MainWindow(QMainWindow):
                 "QPushButton { border: none; font-size: 12px; color: #999; }"
                 "QPushButton:hover { color: #333; }")
         # ── container backgrounds ──
-        self._left_container.setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
-        self._right_widget.setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
-        self._left_scroll.viewport().setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
+        self._left_container.setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
+        self._right_widget.setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
+        self._left_scroll.viewport().setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
         # ── category label colors ──
         if d:
             self._cat_rx_lbl.setStyleSheet("color: #64B5F6; font-size: 11px; font-weight: bold; margin-top: 4px;")
@@ -652,6 +652,8 @@ class MainWindow(QMainWindow):
         else:
             self._cat_rx_lbl.setStyleSheet("color: #0D47A1; font-size: 11px; font-weight: bold; margin-top: 4px;")
             self._cat_tx_lbl.setStyleSheet("color: #E65100; font-size: 11px; font-weight: bold; margin-top: 4px;")
+        # ── results panel ──
+        self._results_panel.apply_theme(d)
 
     @staticmethod
     def _dark_qss() -> str:
@@ -790,16 +792,16 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _light_qss() -> str:
         return """
-        QMainWindow { background: #E3F2FD; border: 2px solid #0D47A1; }
+        QMainWindow { background: #e8f0fe; border: 2px solid #90caf9; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #90CAF9; border-radius: 8px;
+            font-weight: bold; border: 1px solid #bbdefb; border-radius: 8px;
             margin-top: 10px; margin-bottom: 4px;
             padding: 12px 8px 8px 8px;
             background: #ffffff; color: #333;
         }
         QGroupBox::title {
             subcontrol-origin: margin; left: 10px; padding: 0 6px;
-            border-left: 3px solid #42A5F5; color: #1565C0;
+            border-left: 3px solid #64b5f6; color: #1565C0;
         }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
@@ -812,12 +814,12 @@ class MainWindow(QMainWindow):
             border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
             background: #fff; color: #333;
         }
-        QLineEdit:focus { border-color: #1E88E5; }
+        QLineEdit:focus { border-color: #5b9bd5; }
         QProgressBar {
             border: 1px solid #ccc; border-radius: 3px; text-align: center;
             height: 14px; background: #fff; color: #333;
         }
-        QProgressBar::chunk { background: #42A5F5; border-radius: 2px; }
+        QProgressBar::chunk { background: #64b5f6; border-radius: 2px; }
         QScrollArea { border: none; background: transparent; }
         QStatusBar {
             background: #e8e8e8; border-top: 1px solid #ccc; color: #666;
@@ -848,7 +850,7 @@ class MainWindow(QMainWindow):
         QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
-        QSplitter::handle:hover { background: #42A5F5; }
+        QSplitter::handle:hover { background: #64b5f6; }
         QTabWidget::pane {
             border: 1px solid #ccc; border-top: none;
             border-radius: 0 0 4px 4px; background: #fff;
@@ -858,8 +860,8 @@ class MainWindow(QMainWindow):
             border-radius: 4px 4px 0 0; background: #f5f5f5; color: #666;
         }
         QTabBar::tab:selected {
-            background: #fff; color: #0D47A1; font-weight: bold;
-            border-bottom: 2px solid #0D47A1;
+            background: #fff; color: #1565C0; font-weight: bold;
+            border-bottom: 2px solid #1565C0;
         }
         QTabBar::tab:hover:!selected { background: #e8e8e8; }
         QToolTip {
@@ -872,7 +874,7 @@ class MainWindow(QMainWindow):
             border: 1px solid #bbb; border-radius: 3px; background: #fff;
         }
         QCheckBox::indicator:checked {
-            background: #0D47A1; border-color: #0D47A1;
+            background: #1565C0; border-color: #1565C0;
         }
         QLabel { color: #333; }
         QGroupBox QLabel { color: #333; }
@@ -880,7 +882,7 @@ class MainWindow(QMainWindow):
             border: 1px solid #ccc; border-radius: 3px;
             padding: 2px 6px; background: #fff; color: #333;
         }
-        QSpinBox:focus, QDoubleSpinBox:focus { border-color: #1E88E5; }
+        QSpinBox:focus, QDoubleSpinBox:focus { border-color: #5b9bd5; }
         QSpinBox::up-button, QDoubleSpinBox::up-button {
             border: none; border-left: 1px solid #ddd;
             background: #f5f5f5; width: 18px;
@@ -893,16 +895,16 @@ class MainWindow(QMainWindow):
             border: 1px solid #ccc; border-radius: 3px;
             padding: 3px 8px; background: #fff; color: #333;
         }
-        QComboBox:focus { border-color: #1E88E5; }
+        QComboBox:focus { border-color: #5b9bd5; }
         QComboBox::drop-down {
             border: none; border-left: 1px solid #ddd;
             background: #f5f5f5; width: 20px;
         }
         QComboBox QAbstractItemView {
             background: #fff; color: #333;
-            border: 1px solid #ccc; selection-background-color: #0D47A1;
+            border: 1px solid #ccc; selection-background-color: #1565C0;
         }
-        QDialog { background: #E3F2FD; }
+        QDialog { background: #e8f0fe; }
         """
 
     # ========================================================================

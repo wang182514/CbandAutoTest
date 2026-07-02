@@ -89,6 +89,60 @@ class ResultsPanel(QWidget):
         layout.addLayout(btn_layout)
 
         self._update_button_state()
+        self._dark_mode = True  # default, will be updated by apply_theme()
+
+    # ========================================================================
+    #  Theme support
+    # ========================================================================
+
+    def apply_theme(self, dark: bool):
+        """Switch all panel visuals between dark and light themes."""
+        self._dark_mode = dark
+        if dark:
+            self._banner.setStyleSheet(
+                "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
+                "background: rgba(33,150,243,0.12); color: #64B5F6;"
+            )
+            chip_bg, chip_border, chip_title = "#243447", "#2D4055", "#8899AA"
+            chip_metrics = "#667788"
+        else:
+            self._banner.setStyleSheet(
+                "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
+                "background: #BBDEFB; color: #0D47A1;"
+            )
+            chip_bg, chip_border, chip_title = "#f5f5f5", "#ddd", "#444"
+            chip_metrics = "#888"
+
+        # Update idle chips
+        for name, chip in self._dashboard_chips.items():
+            if name in self._results:
+                continue  # has result — _refresh_dashboard handles it
+            chip.setStyleSheet(
+                f"QFrame {{ background: {chip_bg}; border: 1px solid {chip_border};"
+                f"border-radius: 5px; }}"
+                f"QFrame:hover {{ border-color: {'#3D5570' if dark else '#aaa'}; }}"
+            )
+            tl = chip.findChild(QLabel)
+            if tl:
+                tl.setStyleSheet(
+                    f"font-size: 13px; font-weight: bold; color: {chip_title};"
+                    "border: none; background: transparent;"
+                )
+            if hasattr(chip, '_metrics_lbl'):
+                chip._metrics_lbl.setStyleSheet(
+                    f"font-size: 10px; color: {chip_metrics};"
+                    "border: none; background: transparent;"
+                )
+
+        # Refresh result-state chips and banner
+        self._refresh_dashboard()
+        self._update_banner()
+
+        # Re-render current detail if showing a result
+        if self._results:
+            # Find current detail target
+            current = next(iter(self._results))
+            self._show_detail(current)
 
     # ========================================================================
     #  Public API
@@ -207,14 +261,15 @@ class ResultsPanel(QWidget):
             parts.append(f"⊘ {stopped} 终止")
         text = "  ·  ".join(parts)
 
+        d = self._dark_mode
         if stopped > 0:
-            bg, fg = "rgba(255,152,0,0.15)", "#FFA726"
+            bg, fg = ("rgba(255,152,0,0.15)", "#FFA726") if d else ("#ffe0b2", "#e65100")
         elif passed == total:
-            bg, fg = "rgba(76,175,80,0.15)", "#66BB6A"
+            bg, fg = ("rgba(76,175,80,0.15)", "#66BB6A") if d else ("#c8e6c9", "#2e7d32")
         elif passed > 0:
-            bg, fg = "rgba(255,235,59,0.12)", "#FDD835"
+            bg, fg = ("rgba(255,235,59,0.12)", "#FDD835") if d else ("#fff9c4", "#f57f17")
         else:
-            bg, fg = "rgba(244,67,54,0.15)", "#EF5350"
+            bg, fg = ("rgba(244,67,54,0.15)", "#EF5350") if d else ("#ffcdd2", "#c62828")
 
         self._banner.setText(text)
         self._banner.setStyleSheet(
@@ -232,12 +287,13 @@ class ResultsPanel(QWidget):
             chip = self._dashboard_chips.get(name)
             if chip is None or not hasattr(chip, '_metrics_lbl'):
                 continue
+            d = self._dark_mode
             if r.get("stopped"):
-                clr, bg = "#FFA726", "rgba(255,152,0,0.12)"
+                clr, bg = ("#FFA726", "rgba(255,152,0,0.12)") if d else ("#e65100", "#fff3e0")
             elif r["passed"]:
-                clr, bg = "#66BB6A", "rgba(76,175,80,0.12)"
+                clr, bg = ("#66BB6A", "rgba(76,175,80,0.12)") if d else ("#2e7d32", "#e8f5e9")
             else:
-                clr, bg = "#EF5350", "rgba(244,67,54,0.10)"
+                clr, bg = ("#EF5350", "rgba(244,67,54,0.10)") if d else ("#c62828", "#ffebee")
             chip.setStyleSheet(
                 f"QFrame {{ background: {bg}; border: 1px solid {clr}; "
                 f"border-radius: 5px; }}"
@@ -273,18 +329,21 @@ class ResultsPanel(QWidget):
     #  HTML helpers
     # ========================================================================
 
-    @staticmethod
-    def _welcome_html() -> str:
+    def _welcome_html(self) -> str:
+        if self._dark_mode:
+            bg, fg, dim = "#1A2736", "#DCE4EC", "#8899AA"
+        else:
+            bg, fg, dim = "#fff", "#333", "#666"
         return (
-            "<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;"
-            "background-color:#1A2736; color:#DCE4EC;'>"
-            "<p style='color:#8899AA;'>测试结果将在运行后自动显示。</p>"
+            f"<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;"
+            f"background-color:{bg}; color:{fg};'>"
+            f"<p style='color:{dim};'>测试结果将在运行后自动显示。</p>"
             "</body></html>"
         )
 
-    @staticmethod
-    def _style() -> str:
-        return """
+    def _style(self) -> str:
+        if self._dark_mode:
+            return """
         <style>
             body {
                 font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px;
@@ -301,6 +360,24 @@ class ResultsPanel(QWidget):
             p { color: #CDD6F4; }
         </style>
         """
+        else:
+            return """
+        <style>
+            body {
+                font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px;
+                background-color: #fff; color: #333;
+            }
+            h3 { margin: 8px 0 6px 0; color: #333; }
+            table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
+            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
+            th { background-color: #f2f2f2; font-weight: bold; color: #333; }
+            tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
+            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
+            .pass { color: #2e7d32; font-weight: bold; }
+            .fail { color: #c62828; font-weight: bold; }
+            p { color: #666; }
+        </style>
+        """
 
     def _build_detail_html(self, name: str, r: Dict[str, Any]) -> str:
         passed = r["passed"]
@@ -308,12 +385,13 @@ class ResultsPanel(QWidget):
         status = "PASS" if passed else "FAIL"
         status_class = "pass" if passed else "fail"
 
+        ts_color = "#667788" if self._dark_mode else "#888"
         html = [
             "<html><head>",
             self._style(),
             "</head><body>",
             f"<h3>{name} <span class='{status_class}'>{status}</span></h3>",
-            f"<p style='color:#667788;font-size:12px;'>测试时间: {r.get('time', '--:--:--')}</p>",
+            f"<p style='color:{ts_color};font-size:12px;'>测试时间: {r.get('time', '--:--:--')}</p>",
             self._detail_section(name, data),
             "</body></html>",
         ]
