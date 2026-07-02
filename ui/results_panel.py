@@ -55,7 +55,7 @@ class ResultsPanel(QWidget):
         self._banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._banner.setStyleSheet(
             "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
-            "background: #e3f2fd; color: #1565C0;"
+            "background: rgba(33,150,243,0.12); color: #64B5F6;"
         )
         layout.addWidget(self._banner)
 
@@ -112,17 +112,17 @@ class ResultsPanel(QWidget):
         self._results.clear()
         for chip in self._dashboard_chips.values():
             chip.setStyleSheet(
-                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; }"
+                "QFrame { background: #243447; border: 1px solid #2D4055; border-radius: 5px; }"
             )
             if hasattr(chip, '_metrics_lbl'):
                 chip._metrics_lbl.setText("")
             tl = chip.findChild(QLabel)
             if tl:
-                tl.setStyleSheet("font-size: 13px; font-weight: bold; color: #444; border: none; background: transparent;")
+                tl.setStyleSheet("font-size: 13px; font-weight: bold; color: #8899AA; border: none; background: transparent;")
         self._banner.setText("共 0 项")
         self._banner.setStyleSheet(
             "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
-            "background: #e3f2fd; color: #1565C0;"
+            "background: rgba(33,150,243,0.12); color: #64B5F6;"
         )
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
@@ -140,8 +140,8 @@ class ResultsPanel(QWidget):
             chip.setFrameShape(QFrame.Shape.StyledPanel)
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
             chip.setStyleSheet(
-                "QFrame { background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; }"
-                "QFrame:hover { border-color: #aaa; }"
+                "QFrame { background: #243447; border: 1px solid #2D4055; border-radius: 5px; }"
+                "QFrame:hover { border-color: #3D5570; }"
             )
             chip.setFixedHeight(56)
             chip.setMaximumWidth(175)
@@ -152,12 +152,12 @@ class ResultsPanel(QWidget):
             short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:14]
             lbl = QLabel(short)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #444; border: none; background: transparent;")
+            lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #8899AA; border: none; background: transparent;")
             v.addWidget(lbl)
 
             metrics_lbl = QLabel("")
             metrics_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            metrics_lbl.setStyleSheet("font-size: 10px; color: #888; border: none; background: transparent;")
+            metrics_lbl.setStyleSheet("font-size: 10px; color: #667788; border: none; background: transparent;")
             v.addWidget(metrics_lbl)
 
             chip.mousePressEvent = lambda e, n=name: self._on_chip_clicked(n)
@@ -207,13 +207,13 @@ class ResultsPanel(QWidget):
         text = "  ·  ".join(parts)
 
         if stopped > 0:
-            bg, fg = "#ffe0b2", "#e65100"
+            bg, fg = "rgba(255,152,0,0.15)", "#FFA726"
         elif passed == total:
-            bg, fg = "#c8e6c9", "#2e7d32"
+            bg, fg = "rgba(76,175,80,0.15)", "#66BB6A"
         elif passed > 0:
-            bg, fg = "#fff9c4", "#f57f17"
+            bg, fg = "rgba(255,235,59,0.12)", "#FDD835"
         else:
-            bg, fg = "#ffcdd2", "#c62828"
+            bg, fg = "rgba(244,67,54,0.15)", "#EF5350"
 
         self._banner.setText(text)
         self._banner.setStyleSheet(
@@ -232,11 +232,11 @@ class ResultsPanel(QWidget):
             if chip is None or not hasattr(chip, '_metrics_lbl'):
                 continue
             if r.get("stopped"):
-                clr, bg = "#e65100", "#fff3e0"
+                clr, bg = "#FFA726", "rgba(255,152,0,0.12)"
             elif r["passed"]:
-                clr, bg = "#2e7d32", "#e8f5e9"
+                clr, bg = "#66BB6A", "rgba(76,175,80,0.12)"
             else:
-                clr, bg = "#c62828", "#ffebee"
+                clr, bg = "#EF5350", "rgba(244,67,54,0.10)"
             chip.setStyleSheet(
                 f"QFrame {{ background: {bg}; border: 1px solid {clr}; "
                 f"border-radius: 5px; }}"
@@ -275,8 +275,9 @@ class ResultsPanel(QWidget):
     @staticmethod
     def _welcome_html() -> str:
         return (
-            "<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;'>"
-            "<p style='color:#666;'>测试结果将在运行后自动显示。</p>"
+            "<html><body style='font-family:Microsoft YaHei,SimHei,sans-serif;"
+            "background-color:#1A2736; color:#DCE4EC;'>"
+            "<p style='color:#8899AA;'>测试结果将在运行后自动显示。</p>"
             "</body></html>"
         )
 
@@ -284,15 +285,19 @@ class ResultsPanel(QWidget):
     def _style() -> str:
         return """
         <style>
-            body { font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px; }
-            h3 { margin: 8px 0 6px 0; color: #333; }
+            body {
+                font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 13px;
+                background-color: #1A2736; color: #DCE4EC;
+            }
+            h3 { margin: 8px 0 6px 0; color: #DCE4EC; }
             table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
-            th, td { border: 1px solid #ccc; padding: 4px 7px; text-align: center; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            tr:nth-child(even):not(.agg-row) td { background-color: #fafafa; }
-            .agg-row td { background-color: #f0f0f0; font-weight: bold; font-size: 12px; }
-            .pass { color: #2e7d32; font-weight: bold; }
-            .fail { color: #c62828; font-weight: bold; }
+            th, td { border: 1px solid #2D4055; padding: 4px 7px; text-align: center; }
+            th { background-color: #243447; font-weight: bold; color: #DCE4EC; }
+            tr:nth-child(even):not(.agg-row) td { background-color: #1E2D40; }
+            .agg-row td { background-color: #243447; font-weight: bold; font-size: 12px; color: #DCE4EC; }
+            .pass { color: #66BB6A; font-weight: bold; }
+            .fail { color: #EF5350; font-weight: bold; }
+            p { color: #CDD6F4; }
         </style>
         """
 
@@ -307,7 +312,7 @@ class ResultsPanel(QWidget):
             self._style(),
             "</head><body>",
             f"<h3>{name} <span class='{status_class}'>{status}</span></h3>",
-            f"<p style='color:#888;font-size:12px;'>测试时间: {r.get('time', '--:--:--')}</p>",
+            f"<p style='color:#667788;font-size:12px;'>测试时间: {r.get('time', '--:--:--')}</p>",
             self._detail_section(name, data),
             "</body></html>",
         ]

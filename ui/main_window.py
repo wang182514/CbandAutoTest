@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings, QVariantAnimation
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPalette
 
 from config.config_manager import ConfigManager
 from ui.settings_dialog import SettingsDialog
@@ -30,6 +30,23 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("C波段射频模块自动化测试系统")
+
+        # ---- dark theme palette ----
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#0F1923"))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor("#DCE4EC"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#1A2736"))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#243447"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("#DCE4EC"))
+        palette.setColor(QPalette.ColorRole.Button, QColor("#243447"))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#DCE4EC"))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor("#2196F3"))
+        palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#FFFFFF"))
+        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor("#243447"))
+        palette.setColor(QPalette.ColorRole.ToolTipText, QColor("#DCE4EC"))
+        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#556677"))
+        self.setPalette(palette)
+
         self.resize(1200, 800)
 
         # ---- config ----
@@ -67,7 +84,7 @@ class MainWindow(QMainWindow):
         pm.fill(Qt.GlobalColor.transparent)
         p = QPainter(pm)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setBrush(QColor("#0D47A1"))
+        p.setBrush(QColor("#1565C0"))
         p.setPen(Qt.PenStyle.NoPen)
         p.drawEllipse(2, 2, 28, 28)
         p.setPen(QColor("#fff"))
@@ -95,7 +112,7 @@ class MainWindow(QMainWindow):
         # ---- accent bar below title bar ----
         accent = QWidget()
         accent.setFixedHeight(3)
-        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #0D47A1,stop:1 #1E88E5);")
+        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #0D47A1,stop:1 #2196F3);")
         wrapper.addWidget(accent)
 
         root = QHBoxLayout()
@@ -141,9 +158,9 @@ class MainWindow(QMainWindow):
 
         btn_connect = QPushButton("🔌 连接全部仪表")
         btn_connect.clicked.connect(self._on_connect_all)
-        btn_connect.setStyleSheet("QPushButton { background: #e8f5e9; color: #2e7d32; } QPushButton:hover { background: #c8e6c9; }")
+        btn_connect.setStyleSheet("QPushButton { background: rgba(76,175,80,0.15); color: #66BB6A; border: 1px solid #388E3C; } QPushButton:hover { background: rgba(76,175,80,0.25); }")
         btn_disconnect = QPushButton("⏏ 断开全部仪表")
-        btn_disconnect.setStyleSheet("QPushButton { background: #f5f5f5; color: #666; } QPushButton:hover { background: #e0e0e0; }")
+        btn_disconnect.setStyleSheet("QPushButton { background: #243447; color: #8899AA; border: 1px solid #2D4055; } QPushButton:hover { background: #2D4055; }")
         btn_disconnect.clicked.connect(self._on_disconnect_all)
         g1.addWidget(btn_connect)
         g1.addWidget(btn_disconnect)
@@ -177,7 +194,7 @@ class MainWindow(QMainWindow):
         self._btn_run_all = QPushButton("▶  运行全部测试")
         self._btn_run_all.clicked.connect(lambda b=self._btn_run_all: self._run_tests(None, b))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._btn_run_all.setStyleSheet("QPushButton { background: #BBDEFB; color: #0D47A1; } QPushButton:hover { background: #90CAF9; }")
+        self._btn_run_all.setStyleSheet("QPushButton { background: rgba(33,150,243,0.15); color: #64B5F6; border: 1px solid #1976D2; } QPushButton:hover { background: rgba(33,150,243,0.25); }")
         g3.addWidget(self._btn_run_all)
 
         # Individual test buttons — auto-generated from plugin registry
@@ -186,7 +203,7 @@ class MainWindow(QMainWindow):
         self._test_buttons: dict[str, QPushButton] = {}  # track for status updates
 
         cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
-        cat_colors = {"rx": "#0D47A1", "tx": "#E65100", "general": "#555"}
+        cat_colors = {"rx": "#64B5F6", "tx": "#FF9800", "general": "#8899AA"}
         groups: dict[str, list] = {}
         for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
             groups.setdefault(info["category"], []).append(info)
@@ -213,8 +230,8 @@ class MainWindow(QMainWindow):
         self._btn_stop.setEnabled(False)
         self._btn_stop.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._btn_stop.setStyleSheet(
-            "QPushButton { background: #ffebee; color: #c62828; }"
-            "QPushButton:enabled:hover { background: #ffcdd2; }"
+            "QPushButton { background: rgba(244,67,54,0.12); color: #EF5350; border: 1px solid #C62828; }"
+            "QPushButton:enabled:hover { background: rgba(244,67,54,0.22); }"
         )
         g3.addWidget(self._btn_stop)
 
@@ -227,7 +244,7 @@ class MainWindow(QMainWindow):
         self._btn_report.clicked.connect(self._on_write_report)
         self._btn_report.setEnabled(False)
         self._btn_report.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._btn_report.setStyleSheet("QPushButton { background: #fff3e0; color: #e65100; } QPushButton:enabled:hover { background: #ffe0b2; }")
+        self._btn_report.setStyleSheet("QPushButton { background: rgba(255,152,0,0.12); color: #FFA726; border: 1px solid #E65100; } QPushButton:enabled:hover { background: rgba(255,152,0,0.22); }")
         g3.addWidget(self._btn_report)
         left.addWidget(grp_test)
 
@@ -255,7 +272,7 @@ class MainWindow(QMainWindow):
         btn_clear_log = QPushButton("✕")
         btn_clear_log.setFixedSize(24, 20)
         btn_clear_log.setToolTip("清空日志")
-        btn_clear_log.setStyleSheet("QPushButton { border: none; font-size: 12px; color: #999; } QPushButton:hover { color: #333; }")
+        btn_clear_log.setStyleSheet("QPushButton { border: none; font-size: 12px; color: #667788; } QPushButton:hover { color: #AABBCC; }")
         btn_clear_log.clicked.connect(lambda: self._log_view.clear())
         log_header.addWidget(btn_clear_log)
         g4 = QVBoxLayout(grp_log)
@@ -507,60 +524,102 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #E3F2FD; border: 2px solid #64B5F6; }
+        QMainWindow { background: #0F1923; border: 2px solid #2196F3; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #90CAF9; border-radius: 8px;
+            font-weight: bold; border: 1px solid #2D4055; border-radius: 8px;
             margin-top: 10px; margin-bottom: 4px;
             padding: 12px 8px 8px 8px;
-            background: #ffffff;
+            background: #1A2736;
+            color: #DCE4EC;
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #42A5F5; }
+        QGroupBox::title {
+            subcontrol-origin: margin; left: 10px; padding: 0 6px;
+            border-left: 3px solid #2196F3;
+            color: #2196F3;
+        }
         QPushButton {
-            border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
-            background: #fafafa; min-height: 24px;
+            border: 1px solid #2D4055; border-radius: 4px; padding: 6px 14px;
+            background: #243447; color: #DCE4EC; min-height: 24px;
         }
-        QPushButton:hover { background: #e3e8ee; border-color: #999; }
-        QPushButton:pressed { background: #d0d7e0; }
-        QPushButton:disabled { color: #aaa; background: #f5f5f5; }
+        QPushButton:hover { background: #2D4055; border-color: #3D5570; }
+        QPushButton:pressed { background: #1A2736; }
+        QPushButton:disabled { color: #556677; background: #1A2736; }
         QLineEdit {
-            border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
+            border: 1px solid #2D4055; border-radius: 3px; padding: 4px 8px;
+            background: #1A2736; color: #DCE4EC;
         }
-        QLineEdit:focus { border-color: #1E88E5; }
+        QLineEdit:focus { border-color: #2196F3; }
         QProgressBar {
-            border: 1px solid #ccc; border-radius: 3px; text-align: center;
-            height: 14px;
+            border: 1px solid #2D4055; border-radius: 3px; text-align: center;
+            height: 14px; background: #1A2736; color: #DCE4EC;
         }
-        QProgressBar::chunk { background: #42A5F5; border-radius: 2px; }
-        QScrollArea { border: none; }
-        QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
+        QProgressBar::chunk { background: #2196F3; border-radius: 2px; }
+        QScrollArea { border: none; background: transparent; }
+        QStatusBar {
+            background: #0D1520; border-top: 1px solid #2D4055;
+            color: #8899AA;
+        }
         QTextEdit {
-            border: 1px solid #ccc; border-radius: 3px;
-            background: #fafbfc; font-family: Consolas, 'Microsoft YaHei', monospace;
+            border: 1px solid #2D4055; border-radius: 3px;
+            background: #0A1628; color: #DCE4EC;
+            font-family: Consolas, 'Microsoft YaHei', monospace;
         }
-        QTableWidget { border: 1px solid #d0d0d0; gridline-color: #e0e0e0; }
-        QHeaderView::section { background: #f0f0f0; padding: 4px; border: none; border-bottom: 1px solid #d0d0d0; }
-        QTextBrowser { border: 1px solid #d0d0d0; border-radius: 3px; background: #fff; }
-        QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }
-        QScrollBar::handle:vertical { background: #c0c0c0; border-radius: 4px; min-height: 20px; }
-        QScrollBar::handle:vertical:hover { background: #a0a0a0; }
+        QTableWidget {
+            border: 1px solid #2D4055; gridline-color: #1A2736;
+            background: #1A2736; color: #DCE4EC;
+        }
+        QHeaderView::section {
+            background: #243447; padding: 4px;
+            border: none; border-bottom: 1px solid #2D4055;
+            color: #DCE4EC;
+        }
+        QTextBrowser {
+            border: 1px solid #2D4055; border-radius: 3px;
+            background: #1A2736; color: #DCE4EC;
+        }
+        QScrollBar:vertical { width: 8px; background: #1A2736; border-radius: 4px; }
+        QScrollBar::handle:vertical { background: #3D5570; border-radius: 4px; min-height: 20px; }
+        QScrollBar::handle:vertical:hover { background: #4A6680; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QScrollBar:horizontal { height: 8px; background: #f0f0f0; border-radius: 4px; }
-        QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
-        QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
+        QScrollBar:horizontal { height: 8px; background: #1A2736; border-radius: 4px; }
+        QScrollBar::handle:horizontal { background: #3D5570; border-radius: 4px; min-width: 20px; }
+        QScrollBar::handle:horizontal:hover { background: #4A6680; }
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         /* -- splitter handle -- */
-        QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
-        QSplitter::handle:hover { background: #42A5F5; }
+        QSplitter::handle { width: 5px; background: #2D4055; border-radius: 2px; }
+        QSplitter::handle:hover { background: #2196F3; }
         /* -- tab widget -- */
-        QTabWidget::pane { border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; }
-        QTabBar::tab {
-            padding: 6px 14px; border: 1px solid #ddd; border-bottom: none;
-            border-radius: 4px 4px 0 0; background: #f5f5f5; color: #666;
+        QTabWidget::pane {
+            border: 1px solid #2D4055; border-top: none;
+            border-radius: 0 0 4px 4px; background: #1A2736;
         }
-        QTabBar::tab:selected { background: #fff; color: #0D47A1; font-weight: bold; border-bottom: 2px solid #0D47A1; }
-        QTabBar::tab:hover:!selected { background: #e8e8e8; }
+        QTabBar::tab {
+            padding: 6px 14px; border: 1px solid #2D4055; border-bottom: none;
+            border-radius: 4px 4px 0 0; background: #243447; color: #8899AA;
+        }
+        QTabBar::tab:selected {
+            background: #1A2736; color: #2196F3; font-weight: bold;
+            border-bottom: 2px solid #2196F3;
+        }
+        QTabBar::tab:hover:!selected { background: #2D4055; }
         /* -- tooltip -- */
-        QToolTip { background: #444; color: #f0f0f0; border: 1px solid #666; border-radius: 4px; padding: 4px 8px; }
+        QToolTip {
+            background: #243447; color: #DCE4EC;
+            border: 1px solid #3D5570; border-radius: 4px; padding: 4px 8px;
+        }
+        /* -- checkbox -- */
+        QCheckBox { color: #DCE4EC; }
+        QCheckBox::indicator {
+            width: 16px; height: 16px;
+            border: 1px solid #2D4055; border-radius: 3px;
+            background: #1A2736;
+        }
+        QCheckBox::indicator:checked {
+            background: #2196F3; border-color: #2196F3;
+        }
+        /* -- labels -- */
+        QLabel { color: #DCE4EC; }
+        QGroupBox QLabel { color: #DCE4EC; }
         """
 
     # ========================================================================
@@ -695,18 +754,18 @@ class MainWindow(QMainWindow):
             return
         if passed:
             btn.setStyleSheet(
-                "QPushButton { border-left: 4px solid #4CAF50; padding-left: 8px; }"
-                "QPushButton:hover { border-left-color: #388E3C; }"
+                "QPushButton { border-left: 4px solid #4CAF50; padding-left: 8px; color: #DCE4EC; }"
+                "QPushButton:hover { border-left-color: #66BB6A; }"
             )
         else:
             btn.setStyleSheet(
-                "QPushButton { border-left: 4px solid #F44336; padding-left: 8px; }"
-                "QPushButton:hover { border-left-color: #D32F2F; }"
+                "QPushButton { border-left: 4px solid #EF5350; padding-left: 8px; color: #DCE4EC; }"
+                "QPushButton:hover { border-left-color: #F44336; }"
             )
 
     def _reset_button_styles(self):
         for btn in self._test_buttons.values():
-            btn.setStyleSheet("")
+            btn.setStyleSheet("color: #DCE4EC;")
 
     # ── run button pulse animation ──────────────────────────────────
 
@@ -730,11 +789,11 @@ class MainWindow(QMainWindow):
     def _on_pulse_tick(self, val):
         if not hasattr(self, '_pulse_btn') or not self._pulse_btn:
             return
-        r = int(250 + (91 - 250) * val)
-        g = int(250 + (155 - 250) * val)
-        b = int(250 + (213 - 250) * val)
+        r = int(36 + (30 - 36) * val)
+        g = int(52 + (65 - 52) * val)
+        b = int(71 + (100 - 71) * val)
         self._pulse_btn.setStyleSheet(
-            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #1E88E5; }}"
+            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #42A5F5; color: #DCE4EC; }}"
         )
 
     def _on_results_cleared(self):
@@ -890,29 +949,29 @@ class MainWindow(QMainWindow):
 
         # ---- color-coded log lines ----
         if "[ERROR]" in msg or "✗" in msg:
-            color = "#C62828"
+            color = "#EF5350"
             weight = "bold"
         elif "[WARN]" in msg:
-            color = "#E65100"
+            color = "#FF9800"
             weight = "normal"
         elif "PASS" in msg or "✓" in msg:
-            color = "#2E7D32"
+            color = "#66BB6A"
             weight = "bold"
         elif "异常" in msg or "失败" in msg:
-            color = "#C62828"
+            color = "#EF5350"
             weight = "bold"
         elif msg.startswith("==="):
-            color = "#0D47A1"
+            color = "#64B5F6"
             weight = "bold"
         elif msg.startswith("开始:") or msg.startswith("Running:"):
-            color = "#0D47A1"
+            color = "#64B5F6"
             weight = "bold"
         else:
-            color = "#333"
+            color = "#CDD6F4"
             weight = "normal"
 
         line = (
-            f"<span style='color:#999;'>[{timestamp}]</span> "
+            f"<span style='color:#667788;'>[{timestamp}]</span> "
             f"<span style='color:{color}; font-weight:{weight};'>{escaped}</span><br>"
         )
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
