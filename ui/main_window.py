@@ -13,8 +13,10 @@ from PySide6.QtWidgets import (
     QGroupBox, QLabel, QLineEdit, QPushButton, QTextEdit,
     QCheckBox, QProgressBar, QTabWidget, QMessageBox, QFileDialog,
     QStatusBar, QSplitter, QApplication, QScrollArea, QSizePolicy,
+    QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings, QVariantAnimation
+from PySide6.QtGui import QColor
 
 from config.config_manager import ConfigManager
 from ui.settings_dialog import SettingsDialog
@@ -65,7 +67,7 @@ class MainWindow(QMainWindow):
         pm.fill(Qt.GlobalColor.transparent)
         p = QPainter(pm)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setBrush(QColor("#1565C0"))
+        p.setBrush(QColor("#0D47A1"))
         p.setPen(Qt.PenStyle.NoPen)
         p.drawEllipse(2, 2, 28, 28)
         p.setPen(QColor("#fff"))
@@ -93,7 +95,7 @@ class MainWindow(QMainWindow):
         # ---- accent bar below title bar ----
         accent = QWidget()
         accent.setFixedHeight(3)
-        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #1565C0,stop:1 #42A5F5);")
+        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #0D47A1,stop:1 #1E88E5);")
         wrapper.addWidget(accent)
 
         root = QHBoxLayout()
@@ -175,7 +177,7 @@ class MainWindow(QMainWindow):
         self._btn_run_all = QPushButton("▶  运行全部测试")
         self._btn_run_all.clicked.connect(lambda b=self._btn_run_all: self._run_tests(None, b))
         self._btn_run_all.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._btn_run_all.setStyleSheet("QPushButton { background: #e3f2fd; color: #1565C0; } QPushButton:hover { background: #bbdefb; }")
+        self._btn_run_all.setStyleSheet("QPushButton { background: #BBDEFB; color: #0D47A1; } QPushButton:hover { background: #90CAF9; }")
         g3.addWidget(self._btn_run_all)
 
         # Individual test buttons — auto-generated from plugin registry
@@ -184,7 +186,7 @@ class MainWindow(QMainWindow):
         self._test_buttons: dict[str, QPushButton] = {}  # track for status updates
 
         cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
-        cat_colors = {"rx": "#1565C0", "tx": "#E65100", "general": "#555"}
+        cat_colors = {"rx": "#0D47A1", "tx": "#E65100", "general": "#555"}
         groups: dict[str, list] = {}
         for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
             groups.setdefault(info["category"], []).append(info)
@@ -277,6 +279,27 @@ class MainWindow(QMainWindow):
         self._status = QStatusBar()
         self._status.showMessage("就绪")
         self.setStatusBar(self._status)
+
+        # ---- card shadows ----
+        self._apply_card_shadows(central)
+
+    # ========================================================================
+    #  Status indicator helpers
+    # ========================================================================
+
+    # ========================================================================
+    #  Card shadow effect
+    # ========================================================================
+
+    @staticmethod
+    def _apply_card_shadows(root: QWidget):
+        """Apply soft drop shadows to all QGroupBox descendants for depth."""
+        for grp in root.findChildren(QGroupBox):
+            shadow = QGraphicsDropShadowEffect(grp)
+            shadow.setBlurRadius(10)
+            shadow.setOffset(0, 2)
+            shadow.setColor(QColor(0, 0, 0, 35))
+            grp.setGraphicsEffect(shadow)
 
     # ========================================================================
     #  Status indicator helpers
@@ -484,13 +507,14 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #e8f0fe; border: 2px solid #90caf9; }
+        QMainWindow { background: #E3F2FD; border: 2px solid #64B5F6; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #bbdefb; border-radius: 6px;
-            margin-top: 8px; padding-top: 10px;
-            background: rgba(255,255,255,0.6);
+            font-weight: bold; border: 1px solid #90CAF9; border-radius: 8px;
+            margin-top: 10px; margin-bottom: 4px;
+            padding: 12px 8px 8px 8px;
+            background: #ffffff;
         }
-        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #64b5f6; }
+        QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px; border-left: 3px solid #42A5F5; }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
             background: #fafafa; min-height: 24px;
@@ -501,12 +525,12 @@ class MainWindow(QMainWindow):
         QLineEdit {
             border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
         }
-        QLineEdit:focus { border-color: #5b9bd5; }
+        QLineEdit:focus { border-color: #1E88E5; }
         QProgressBar {
             border: 1px solid #ccc; border-radius: 3px; text-align: center;
             height: 14px;
         }
-        QProgressBar::chunk { background: #64b5f6; border-radius: 2px; }
+        QProgressBar::chunk { background: #42A5F5; border-radius: 2px; }
         QScrollArea { border: none; }
         QStatusBar { background: #e8e8e8; border-top: 1px solid #ccc; }
         QTextEdit {
@@ -526,14 +550,14 @@ class MainWindow(QMainWindow):
         QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
         /* -- splitter handle -- */
         QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
-        QSplitter::handle:hover { background: #64b5f6; }
+        QSplitter::handle:hover { background: #42A5F5; }
         /* -- tab widget -- */
         QTabWidget::pane { border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; }
         QTabBar::tab {
             padding: 6px 14px; border: 1px solid #ddd; border-bottom: none;
             border-radius: 4px 4px 0 0; background: #f5f5f5; color: #666;
         }
-        QTabBar::tab:selected { background: #fff; color: #1565C0; font-weight: bold; border-bottom: 2px solid #1565C0; }
+        QTabBar::tab:selected { background: #fff; color: #0D47A1; font-weight: bold; border-bottom: 2px solid #0D47A1; }
         QTabBar::tab:hover:!selected { background: #e8e8e8; }
         /* -- tooltip -- */
         QToolTip { background: #444; color: #f0f0f0; border: 1px solid #666; border-radius: 4px; padding: 4px 8px; }
@@ -710,7 +734,7 @@ class MainWindow(QMainWindow):
         g = int(250 + (155 - 250) * val)
         b = int(250 + (213 - 250) * val)
         self._pulse_btn.setStyleSheet(
-            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #5b9bd5; }}"
+            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #1E88E5; }}"
         )
 
     def _on_results_cleared(self):
@@ -863,13 +887,34 @@ class MainWindow(QMainWindow):
     def _log(self, msg: str):
         timestamp = datetime.now().strftime("%H:%M:%S")
         escaped = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        if "[WARN]" in msg:
-            color = "#E65100"
-        elif "[ERROR]" in msg or "异常" in msg or "失败" in msg:
+
+        # ---- color-coded log lines ----
+        if "[ERROR]" in msg or "✗" in msg:
             color = "#C62828"
+            weight = "bold"
+        elif "[WARN]" in msg:
+            color = "#E65100"
+            weight = "normal"
+        elif "PASS" in msg or "✓" in msg:
+            color = "#2E7D32"
+            weight = "bold"
+        elif "异常" in msg or "失败" in msg:
+            color = "#C62828"
+            weight = "bold"
+        elif msg.startswith("==="):
+            color = "#0D47A1"
+            weight = "bold"
+        elif msg.startswith("开始:") or msg.startswith("Running:"):
+            color = "#0D47A1"
+            weight = "bold"
         else:
             color = "#333"
-        line = f"<span style='color:#888;'>[{timestamp}]</span> <span style='color:{color};'>{escaped}</span><br>"
+            weight = "normal"
+
+        line = (
+            f"<span style='color:#999;'>[{timestamp}]</span> "
+            f"<span style='color:{color}; font-weight:{weight};'>{escaped}</span><br>"
+        )
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
         self._log_view.insertHtml(line)
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
