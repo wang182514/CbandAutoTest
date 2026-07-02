@@ -166,19 +166,30 @@ class ResultsPanel(QWidget):
     def clear_results(self):
         """Clear all displayed results."""
         self._results.clear()
+        d = self._dark_mode
+        if d:
+            chip_bg, chip_border, chip_title = "#243447", "#2D4055", "#8899AA"
+            banner_bg, banner_fg = "rgba(33,150,243,0.12)", "#64B5F6"
+        else:
+            chip_bg, chip_border, chip_title = "#f5f5f5", "#ddd", "#444"
+            banner_bg, banner_fg = "#e8e8e8", "#555"
         for chip in self._dashboard_chips.values():
             chip.setStyleSheet(
-                "QFrame { background: #243447; border: 1px solid #2D4055; border-radius: 5px; }"
+                f"QFrame {{ background: {chip_bg}; border: 1px solid {chip_border};"
+                f"border-radius: 5px; }}"
             )
             if hasattr(chip, '_metrics_lbl'):
                 chip._metrics_lbl.setText("")
             tl = chip.findChild(QLabel)
             if tl:
-                tl.setStyleSheet("font-size: 13px; font-weight: bold; color: #8899AA; border: none; background: transparent;")
+                tl.setStyleSheet(
+                    f"font-size: 13px; font-weight: bold; color: {chip_title};"
+                    "border: none; background: transparent;"
+                )
         self._banner.setText("共 0 项")
         self._banner.setStyleSheet(
-            "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
-            "background: rgba(33,150,243,0.12); color: #64B5F6;"
+            f"font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
+            f"background: {banner_bg}; color: {banner_fg};"
         )
         self._detail.setHtml(self._welcome_html())
         self._update_button_state()
@@ -191,13 +202,22 @@ class ResultsPanel(QWidget):
             chip.deleteLater()
         self._dashboard_chips.clear()
 
+        d = self._dark_mode
+        if d:
+            chip_bg, chip_border, hover_border = "#243447", "#2D4055", "#3D5570"
+            chip_title, chip_metrics = "#8899AA", "#667788"
+        else:
+            chip_bg, chip_border, hover_border = "#f5f5f5", "#ddd", "#aaa"
+            chip_title, chip_metrics = "#444", "#888"
+
         for name in names:
             chip = QFrame()
             chip.setFrameShape(QFrame.Shape.StyledPanel)
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
             chip.setStyleSheet(
-                "QFrame { background: #243447; border: 1px solid #2D4055; border-radius: 5px; }"
-                "QFrame:hover { border-color: #3D5570; }"
+                f"QFrame {{ background: {chip_bg}; border: 1px solid {chip_border};"
+                f"border-radius: 5px; }}"
+                f"QFrame:hover {{ border-color: {hover_border}; }}"
             )
             chip.setFixedHeight(56)
             chip.setMaximumWidth(175)
@@ -208,12 +228,12 @@ class ResultsPanel(QWidget):
             short = name.replace("RX ", "").replace("TX ", "").replace(" 噪声系数 + 增益", " NF").replace(" 相位噪声", " PN").replace(" 增益 + 输出功率", " Gain").replace(" 平坦度 + 相位噪声", " Flat/PN")[:14]
             lbl = QLabel(short)
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #8899AA; border: none; background: transparent;")
+            lbl.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {chip_title}; border: none; background: transparent;")
             v.addWidget(lbl)
 
             metrics_lbl = QLabel("")
             metrics_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            metrics_lbl.setStyleSheet("font-size: 10px; color: #667788; border: none; background: transparent;")
+            metrics_lbl.setStyleSheet(f"font-size: 10px; color: {chip_metrics}; border: none; background: transparent;")
             v.addWidget(metrics_lbl)
 
             chip.mousePressEvent = lambda e, n=name: self._on_chip_clicked(n)
