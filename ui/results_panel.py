@@ -39,6 +39,7 @@ class ResultsPanel(QWidget):
         super().__init__(parent)
         self._results: Dict[str, Dict[str, Any]] = {}
         self._dashboard_chips: Dict[str, QFrame] = {}
+        self._dark_mode = True  # default, updated by apply_theme()
         self._build_ui()
 
     # ========================================================================
@@ -89,7 +90,6 @@ class ResultsPanel(QWidget):
         layout.addLayout(btn_layout)
 
         self._update_button_state()
-        self._dark_mode = True  # default, will be updated by apply_theme()
 
     # ========================================================================
     #  Theme support
