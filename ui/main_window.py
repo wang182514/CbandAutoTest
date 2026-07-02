@@ -654,6 +654,8 @@ class MainWindow(QMainWindow):
             self._cat_tx_lbl.setStyleSheet("color: #E65100; font-size: 11px; font-weight: bold; margin-top: 4px;")
         # ── results panel ──
         self._results_panel.apply_theme(d)
+        # ── clear log (HTML lines are frozen at old theme colors) ──
+        self._log_view.clear()
 
     @staticmethod
     def _dark_qss() -> str:
@@ -1264,7 +1266,7 @@ class MainWindow(QMainWindow):
             color = "#64B5F6" if d else "#0D47A1"
             weight = "bold"
         else:
-            color = "#CDD6F4" if d else "#333333"
+            color = "#CDD6F4" if d else "#1a1a1a"
             weight = "normal"
         ts_color = "#667788" if d else "#888888"
 
