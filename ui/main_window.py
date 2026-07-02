@@ -547,7 +547,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _light_palette() -> QPalette:
         p = QPalette()
-        p.setColor(QPalette.ColorRole.Window, QColor("#E3F2FD"))
+        p.setColor(QPalette.ColorRole.Window, QColor("#f5f5f5"))
         p.setColor(QPalette.ColorRole.WindowText, QColor("#333333"))
         p.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))
         p.setColor(QPalette.ColorRole.AlternateBase, QColor("#F5F5F5"))
@@ -642,9 +642,9 @@ class MainWindow(QMainWindow):
                 "QPushButton { border: none; font-size: 12px; color: #999; }"
                 "QPushButton:hover { color: #333; }")
         # ── container backgrounds ──
-        self._left_container.setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
-        self._right_widget.setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
-        self._left_scroll.viewport().setStyleSheet("background: #0F1923;" if d else "background: #e8f0fe;")
+        self._left_container.setStyleSheet("background: #0F1923;" if d else "background: #f5f5f5;")
+        self._right_widget.setStyleSheet("background: #0F1923;" if d else "background: #f5f5f5;")
+        self._left_scroll.viewport().setStyleSheet("background: #0F1923;" if d else "background: #f5f5f5;")
         # ── category label colors ──
         if d:
             self._cat_rx_lbl.setStyleSheet("color: #64B5F6; font-size: 11px; font-weight: bold; margin-top: 4px;")
@@ -792,16 +792,16 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _light_qss() -> str:
         return """
-        QMainWindow { background: #e8f0fe; border: 2px solid #90caf9; }
+        QMainWindow { background: #f5f5f5; border: 2px solid #ccc; }
         QGroupBox {
-            font-weight: bold; border: 1px solid #bbdefb; border-radius: 8px;
+            font-weight: bold; border: 1px solid #ddd; border-radius: 8px;
             margin-top: 10px; margin-bottom: 4px;
             padding: 12px 8px 8px 8px;
             background: #ffffff; color: #333;
         }
         QGroupBox::title {
             subcontrol-origin: margin; left: 10px; padding: 0 6px;
-            border-left: 3px solid #64b5f6; color: #1565C0;
+            border-left: 3px solid #1565C0; color: #1565C0;
         }
         QPushButton {
             border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
@@ -904,7 +904,7 @@ class MainWindow(QMainWindow):
             background: #fff; color: #333;
             border: 1px solid #ccc; selection-background-color: #1565C0;
         }
-        QDialog { background: #e8f0fe; }
+        QDialog { background: #f5f5f5; }
         """
 
     # ========================================================================

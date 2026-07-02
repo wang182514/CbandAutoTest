@@ -108,7 +108,7 @@ class ResultsPanel(QWidget):
         else:
             self._banner.setStyleSheet(
                 "font-size: 14px; font-weight: bold; padding: 6px; border-radius: 4px;"
-                "background: #BBDEFB; color: #0D47A1;"
+                "background: #e8e8e8; color: #555;"
             )
             chip_bg, chip_border, chip_title = "#f5f5f5", "#ddd", "#444"
             chip_metrics = "#888"
@@ -138,11 +138,12 @@ class ResultsPanel(QWidget):
         self._refresh_dashboard()
         self._update_banner()
 
-        # Re-render current detail if showing a result
+        # Re-render detail view for current theme
         if self._results:
-            # Find current detail target
             current = next(iter(self._results))
             self._show_detail(current)
+        else:
+            self._detail.setHtml(self._welcome_html())
 
     # ========================================================================
     #  Public API
