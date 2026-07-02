@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
 
         # ---- accumulated results (for report) ----
         self._all_results: list = []
+        self._log_messages: list[tuple[str, str]] = []  # (timestamp, msg) for theme-switch re-render
 
         # ---- UI ----
         self._build_ui()
@@ -272,7 +273,7 @@ class MainWindow(QMainWindow):
         self._btn_clear_log = QPushButton("✕")
         self._btn_clear_log.setFixedSize(24, 20)
         self._btn_clear_log.setToolTip("清空日志")
-        self._btn_clear_log.clicked.connect(lambda: self._log_view.clear())
+        self._btn_clear_log.clicked.connect(self._clear_log)
         log_header.addWidget(self._btn_clear_log)
         g4 = QVBoxLayout(grp_log)
         g4.addLayout(log_header)
@@ -654,8 +655,8 @@ class MainWindow(QMainWindow):
             self._cat_tx_lbl.setStyleSheet("color: #E65100; font-size: 11px; font-weight: bold; margin-top: 4px;")
         # ── results panel ──
         self._results_panel.apply_theme(d)
-        # ── clear log (HTML lines are frozen at old theme colors) ──
-        self._log_view.clear()
+        # ── re-render log with new theme colors ──
+        self._rerender_log()
 
     @staticmethod
     def _dark_qss() -> str:
@@ -957,7 +958,7 @@ class MainWindow(QMainWindow):
 
         # Keep previous results visible during this run; they will be
         # overwritten as each test completes. Only clear the log.
-        self._log_view.clear()
+        self._clear_log()
         self._reset_button_styles()
 
         from ui.test_runner import TEST_REGISTRY
@@ -1242,32 +1243,41 @@ class MainWindow(QMainWindow):
     # ========================================================================
 
     def _log(self, msg: str):
-        timestamp = datetime.now().strftime("%H:%M:%S")
+        ts = datetime.now().strftime("%H:%M:%S")
+        self._log_messages.append((ts, msg))
+        self._append_log_html(ts, msg)
+        self.logger.info(msg)
+
+    def _clear_log(self):
+        """Clear both the view and the message buffer."""
+        self._log_view.clear()
+        self._log_messages.clear()
+
+    def _rerender_log(self):
+        """Re-render all buffered log messages with current theme colors."""
+        self._log_view.clear()
+        for ts, msg in self._log_messages:
+            self._append_log_html(ts, msg)
+
+    def _append_log_html(self, timestamp: str, msg: str):
+        """Append one color-coded line to the log view (no file logging)."""
         escaped = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-        # ---- color-coded log lines (theme-aware) ----
         d = self._dark_mode
         if "[ERROR]" in msg or "✗" in msg:
-            color = "#EF5350" if d else "#C62828"
-            weight = "bold"
+            color, weight = ("#EF5350", "bold") if d else ("#C62828", "bold")
         elif "[WARN]" in msg:
-            color = "#FF9800" if d else "#E65100"
-            weight = "normal"
+            color, weight = ("#FF9800", "normal") if d else ("#E65100", "normal")
         elif "PASS" in msg or "✓" in msg:
-            color = "#66BB6A" if d else "#2E7D32"
-            weight = "bold"
+            color, weight = ("#66BB6A", "bold") if d else ("#2E7D32", "bold")
         elif "异常" in msg or "失败" in msg:
-            color = "#EF5350" if d else "#C62828"
-            weight = "bold"
+            color, weight = ("#EF5350", "bold") if d else ("#C62828", "bold")
         elif msg.startswith("==="):
-            color = "#64B5F6" if d else "#0D47A1"
-            weight = "bold"
+            color, weight = ("#64B5F6", "bold") if d else ("#0D47A1", "bold")
         elif msg.startswith("开始:") or msg.startswith("Running:"):
-            color = "#64B5F6" if d else "#0D47A1"
-            weight = "bold"
+            color, weight = ("#64B5F6", "bold") if d else ("#0D47A1", "bold")
         else:
-            color = "#CDD6F4" if d else "#1a1a1a"
-            weight = "normal"
+            color, weight = ("#CDD6F4", "normal") if d else ("#1a1a1a", "normal")
         ts_color = "#667788" if d else "#888888"
 
         line = (
@@ -1278,7 +1288,6 @@ class MainWindow(QMainWindow):
         self._log_view.insertHtml(line)
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
         self._log_view.ensureCursorVisible()
-        self.logger.info(msg)
 
 
 class _UiLogAdapter:
