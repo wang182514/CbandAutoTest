@@ -31,21 +31,11 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("C波段射频模块自动化测试系统")
 
-        # ---- dark theme palette ----
-        palette = QPalette()
-        palette.setColor(QPalette.ColorRole.Window, QColor("#0F1923"))
-        palette.setColor(QPalette.ColorRole.WindowText, QColor("#DCE4EC"))
-        palette.setColor(QPalette.ColorRole.Base, QColor("#1A2736"))
-        palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#243447"))
-        palette.setColor(QPalette.ColorRole.Text, QColor("#DCE4EC"))
-        palette.setColor(QPalette.ColorRole.Button, QColor("#243447"))
-        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#DCE4EC"))
-        palette.setColor(QPalette.ColorRole.Highlight, QColor("#2196F3"))
-        palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#FFFFFF"))
-        palette.setColor(QPalette.ColorRole.ToolTipBase, QColor("#243447"))
-        palette.setColor(QPalette.ColorRole.ToolTipText, QColor("#DCE4EC"))
-        palette.setColor(QPalette.ColorRole.PlaceholderText, QColor("#556677"))
-        self.setPalette(palette)
+        # ---- theme ----
+        # ---- theme preference ----
+        s = QSettings("CBand", "AutoTest")
+        self._dark_mode = s.value("theme/dark_mode", True, type=bool)
+        self._apply_theme(dark=self._dark_mode)
 
         self.resize(1200, 800)
 
@@ -75,8 +65,7 @@ class MainWindow(QMainWindow):
         self._load_config_to_ui()
         self._restore_layout()
 
-        # ---- global stylesheet ----
-        self.setStyleSheet(self._global_qss())
+        # theme already applied in _apply_theme() above
 
         # ---- window icon ----
         from PySide6.QtGui import QIcon, QPixmap, QPainter, QFont
@@ -126,8 +115,9 @@ class MainWindow(QMainWindow):
         left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         left_scroll.setMinimumWidth(260)
         left_scroll.setMaximumWidth(360)
-        left_container = QWidget()
-        left_container.setStyleSheet("background: #0F1923;")
+        self._left_container = QWidget()
+        self._left_container.setStyleSheet("background: #0F1923;")
+        left_container = self._left_container
         left = QVBoxLayout(left_container)
         left.setStretch(0, 0)
 
@@ -158,14 +148,12 @@ class MainWindow(QMainWindow):
         g1.addLayout(self._status_row(self._ind_sa, self._lbl_sa))
         g1.addLayout(self._status_row(self._ind_switch, self._lbl_switch))
 
-        btn_connect = QPushButton("🔌 连接全部仪表")
-        btn_connect.clicked.connect(self._on_connect_all)
-        btn_connect.setStyleSheet("QPushButton { background: rgba(76,175,80,0.15); color: #66BB6A; border: 1px solid #388E3C; } QPushButton:hover { background: rgba(76,175,80,0.25); }")
-        btn_disconnect = QPushButton("⏏ 断开全部仪表")
-        btn_disconnect.setStyleSheet("QPushButton { background: #243447; color: #8899AA; border: 1px solid #2D4055; } QPushButton:hover { background: #2D4055; }")
-        btn_disconnect.clicked.connect(self._on_disconnect_all)
-        g1.addWidget(btn_connect)
-        g1.addWidget(btn_disconnect)
+        self._btn_connect = QPushButton("🔌 连接全部仪表")
+        self._btn_connect.clicked.connect(self._on_connect_all)
+        self._btn_disconnect = QPushButton("⏏ 断开全部仪表")
+        self._btn_disconnect.clicked.connect(self._on_disconnect_all)
+        g1.addWidget(self._btn_connect)
+        g1.addWidget(self._btn_disconnect)
         left.addWidget(grp_inst)
 
         # --- quick params ---
@@ -179,6 +167,11 @@ class MainWindow(QMainWindow):
 
         self._chk_screenshot = QCheckBox("启用截图")
         g2.addWidget(self._chk_screenshot)
+
+        self._chk_dark_mode = QCheckBox("🌙 深色模式")
+        self._chk_dark_mode.setChecked(self._dark_mode)
+        self._chk_dark_mode.toggled.connect(self._on_toggle_theme)
+        g2.addWidget(self._chk_dark_mode)
 
         btn_settings = QPushButton("详细设置...")
         btn_settings.clicked.connect(self._on_open_settings)
@@ -205,7 +198,6 @@ class MainWindow(QMainWindow):
         self._test_buttons: dict[str, QPushButton] = {}  # track for status updates
 
         cat_labels = {"rx": "▼ 接收测试", "tx": "▼ 发射测试"}
-        cat_colors = {"rx": "#64B5F6", "tx": "#FF9800", "general": "#8899AA"}
         groups: dict[str, list] = {}
         for info in sorted(TEST_REGISTRY.values(), key=lambda x: x["order"]):
             groups.setdefault(info["category"], []).append(info)
@@ -215,8 +207,11 @@ class MainWindow(QMainWindow):
                 continue
             if cat in cat_labels:
                 cat_lbl = QLabel(cat_labels[cat])
-                cat_lbl.setStyleSheet(f"color: {cat_colors.get(cat, '#666')}; font-size: 11px; font-weight: bold; margin-top: 4px;")
                 g3.addWidget(cat_lbl)
+                if cat == "rx":
+                    self._cat_rx_lbl = cat_lbl
+                elif cat == "tx":
+                    self._cat_tx_lbl = cat_lbl
             for info in groups[cat]:
                 tid = info["id"]
                 btn = QPushButton(info["name"])
@@ -251,11 +246,13 @@ class MainWindow(QMainWindow):
         left.addWidget(grp_test)
 
         left.addStretch()
+        self._left_scroll = left_scroll
         left_scroll.setWidget(left_container)
 
         # ---- right panel ----
-        right_widget = QWidget()
-        right_widget.setStyleSheet("background: #0F1923;")
+        self._right_widget = QWidget()
+        self._right_widget.setStyleSheet("background: #0F1923;")
+        right_widget = self._right_widget
         right = QVBoxLayout(right_widget)
         right.setContentsMargins(0, 0, 0, 0)
 
@@ -272,12 +269,11 @@ class MainWindow(QMainWindow):
         grp_log = QGroupBox("日志")
         log_header = QHBoxLayout()
         log_header.addStretch()
-        btn_clear_log = QPushButton("✕")
-        btn_clear_log.setFixedSize(24, 20)
-        btn_clear_log.setToolTip("清空日志")
-        btn_clear_log.setStyleSheet("QPushButton { border: none; font-size: 12px; color: #667788; } QPushButton:hover { color: #AABBCC; }")
-        btn_clear_log.clicked.connect(lambda: self._log_view.clear())
-        log_header.addWidget(btn_clear_log)
+        self._btn_clear_log = QPushButton("✕")
+        self._btn_clear_log.setFixedSize(24, 20)
+        self._btn_clear_log.setToolTip("清空日志")
+        self._btn_clear_log.clicked.connect(lambda: self._log_view.clear())
+        log_header.addWidget(self._btn_clear_log)
         g4 = QVBoxLayout(grp_log)
         g4.addLayout(log_header)
         self._log_view = QTextEdit()
@@ -302,6 +298,9 @@ class MainWindow(QMainWindow):
 
         # ---- card shadows ----
         self._apply_card_shadows(central)
+
+        # ---- apply theme-dependent inline styles ----
+        self._apply_inline_styles()
 
     # ========================================================================
     #  Status indicator helpers
@@ -524,8 +523,138 @@ class MainWindow(QMainWindow):
     #  Global stylesheet
     # ========================================================================
 
+    # ========================================================================
+    #  Theme engine
+    # ========================================================================
+
     @staticmethod
-    def _global_qss() -> str:
+    def _dark_palette() -> QPalette:
+        p = QPalette()
+        p.setColor(QPalette.ColorRole.Window, QColor("#0F1923"))
+        p.setColor(QPalette.ColorRole.WindowText, QColor("#DCE4EC"))
+        p.setColor(QPalette.ColorRole.Base, QColor("#1A2736"))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor("#243447"))
+        p.setColor(QPalette.ColorRole.Text, QColor("#DCE4EC"))
+        p.setColor(QPalette.ColorRole.Button, QColor("#243447"))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor("#DCE4EC"))
+        p.setColor(QPalette.ColorRole.Highlight, QColor("#2196F3"))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor("#FFFFFF"))
+        p.setColor(QPalette.ColorRole.ToolTipBase, QColor("#243447"))
+        p.setColor(QPalette.ColorRole.ToolTipText, QColor("#DCE4EC"))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor("#556677"))
+        return p
+
+    @staticmethod
+    def _light_palette() -> QPalette:
+        p = QPalette()
+        p.setColor(QPalette.ColorRole.Window, QColor("#E3F2FD"))
+        p.setColor(QPalette.ColorRole.WindowText, QColor("#333333"))
+        p.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor("#F5F5F5"))
+        p.setColor(QPalette.ColorRole.Text, QColor("#333333"))
+        p.setColor(QPalette.ColorRole.Button, QColor("#FAFAFA"))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor("#333333"))
+        p.setColor(QPalette.ColorRole.Highlight, QColor("#0D47A1"))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor("#FFFFFF"))
+        p.setColor(QPalette.ColorRole.ToolTipBase, QColor("#FFFFFF"))
+        p.setColor(QPalette.ColorRole.ToolTipText, QColor("#333333"))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor("#999999"))
+        return p
+
+    def _apply_theme(self, dark: bool):
+        """Switch between dark and light themes globally."""
+        app = QApplication.instance()
+        if dark:
+            app.setPalette(self._dark_palette())
+            app.setStyleSheet(self._dark_qss())
+        else:
+            app.setPalette(self._light_palette())
+            app.setStyleSheet(self._light_qss())
+        self._dark_mode = dark
+
+    def _on_toggle_theme(self, dark: bool):
+        """Handle theme toggle checkbox."""
+        self._apply_theme(dark)
+        self._apply_inline_styles()
+        s = QSettings("CBand", "AutoTest")
+        s.setValue("theme/dark_mode", dark)
+
+    def _apply_inline_styles(self):
+        """Re-apply all theme-dependent inline widget styles."""
+        d = self._dark_mode
+        # ── connect / disconnect buttons ──
+        if d:
+            self._btn_connect.setStyleSheet(
+                "QPushButton { background: rgba(76,175,80,0.15); color: #66BB6A;"
+                "border: 1px solid #388E3C; }"
+                "QPushButton:hover { background: rgba(76,175,80,0.25); }")
+            self._btn_disconnect.setStyleSheet(
+                "QPushButton { background: #243447; color: #8899AA;"
+                "border: 1px solid #2D4055; }"
+                "QPushButton:hover { background: #2D4055; }")
+        else:
+            self._btn_connect.setStyleSheet(
+                "QPushButton { background: #e8f5e9; color: #2e7d32; }"
+                "QPushButton:hover { background: #c8e6c9; }")
+            self._btn_disconnect.setStyleSheet(
+                "QPushButton { background: #f5f5f5; color: #666; }"
+                "QPushButton:hover { background: #e0e0e0; }")
+        # ── run all button ──
+        if d:
+            self._btn_run_all.setStyleSheet(
+                "QPushButton { background: rgba(33,150,243,0.15); color: #64B5F6;"
+                "border: 1px solid #1976D2; }"
+                "QPushButton:hover { background: rgba(33,150,243,0.25); }")
+        else:
+            self._btn_run_all.setStyleSheet(
+                "QPushButton { background: #BBDEFB; color: #0D47A1; }"
+                "QPushButton:hover { background: #90CAF9; }")
+        # ── stop button ──
+        if d:
+            self._btn_stop.setStyleSheet(
+                "QPushButton { background: rgba(244,67,54,0.12); color: #EF5350;"
+                "border: 1px solid #C62828; }"
+                "QPushButton:enabled:hover { background: rgba(244,67,54,0.22); }")
+        else:
+            self._btn_stop.setStyleSheet(
+                "QPushButton { background: #ffebee; color: #c62828; }"
+                "QPushButton:enabled:hover { background: #ffcdd2; }")
+        # ── report button ──
+        if d:
+            self._btn_report.setStyleSheet(
+                "QPushButton { background: rgba(255,152,0,0.12); color: #FFA726;"
+                "border: 1px solid #E65100; }"
+                "QPushButton:enabled:hover { background: rgba(255,152,0,0.22); }")
+        else:
+            self._btn_report.setStyleSheet(
+                "QPushButton { background: #fff3e0; color: #e65100; }"
+                "QPushButton:enabled:hover { background: #ffe0b2; }")
+        # ── test button reset state ──
+        for btn in self._test_buttons.values():
+            btn.setStyleSheet("color: #DCE4EC;" if d else "")
+        # ── log clear button ──
+        if d:
+            self._btn_clear_log.setStyleSheet(
+                "QPushButton { border: none; font-size: 12px; color: #667788; }"
+                "QPushButton:hover { color: #AABBCC; }")
+        else:
+            self._btn_clear_log.setStyleSheet(
+                "QPushButton { border: none; font-size: 12px; color: #999; }"
+                "QPushButton:hover { color: #333; }")
+        # ── container backgrounds ──
+        self._left_container.setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
+        self._right_widget.setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
+        self._left_scroll.viewport().setStyleSheet("background: #0F1923;" if d else "background: #E3F2FD;")
+        # ── category label colors ──
+        if d:
+            self._cat_rx_lbl.setStyleSheet("color: #64B5F6; font-size: 11px; font-weight: bold; margin-top: 4px;")
+            self._cat_tx_lbl.setStyleSheet("color: #FF9800; font-size: 11px; font-weight: bold; margin-top: 4px;")
+        else:
+            self._cat_rx_lbl.setStyleSheet("color: #0D47A1; font-size: 11px; font-weight: bold; margin-top: 4px;")
+            self._cat_tx_lbl.setStyleSheet("color: #E65100; font-size: 11px; font-weight: bold; margin-top: 4px;")
+
+    @staticmethod
+    def _dark_qss() -> str:
         return """
         QMainWindow { background: #0F1923; border: 2px solid #2196F3; }
         QGroupBox {
@@ -623,6 +752,157 @@ class MainWindow(QMainWindow):
         /* -- labels -- */
         QLabel { color: #DCE4EC; }
         QGroupBox QLabel { color: #DCE4EC; }
+        /* -- spin boxes -- */
+        QSpinBox, QDoubleSpinBox {
+            border: 1px solid #2D4055; border-radius: 3px;
+            padding: 2px 6px;
+            background: #1A2736; color: #DCE4EC;
+        }
+        QSpinBox:focus, QDoubleSpinBox:focus { border-color: #2196F3; }
+        QSpinBox::up-button, QDoubleSpinBox::up-button {
+            border: none; border-left: 1px solid #2D4055;
+            background: #243447; width: 18px;
+        }
+        QSpinBox::down-button, QDoubleSpinBox::down-button {
+            border: none; border-left: 1px solid #2D4055;
+            background: #243447; width: 18px;
+        }
+        /* -- combo box -- */
+        QComboBox {
+            border: 1px solid #2D4055; border-radius: 3px;
+            padding: 3px 8px;
+            background: #1A2736; color: #DCE4EC;
+        }
+        QComboBox:focus { border-color: #2196F3; }
+        QComboBox::drop-down {
+            border: none; border-left: 1px solid #2D4055;
+            background: #243447; width: 20px;
+        }
+        QComboBox QAbstractItemView {
+            background: #1A2736; color: #DCE4EC;
+            border: 1px solid #2D4055;
+            selection-background-color: #2196F3;
+        }
+        /* -- dialog -- */
+        QDialog { background: #0F1923; }
+        """
+
+    @staticmethod
+    def _light_qss() -> str:
+        return """
+        QMainWindow { background: #E3F2FD; border: 2px solid #0D47A1; }
+        QGroupBox {
+            font-weight: bold; border: 1px solid #90CAF9; border-radius: 8px;
+            margin-top: 10px; margin-bottom: 4px;
+            padding: 12px 8px 8px 8px;
+            background: #ffffff; color: #333;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin; left: 10px; padding: 0 6px;
+            border-left: 3px solid #42A5F5; color: #1565C0;
+        }
+        QPushButton {
+            border: 1px solid #bbb; border-radius: 4px; padding: 6px 14px;
+            background: #fafafa; color: #333; min-height: 24px;
+        }
+        QPushButton:hover { background: #e3e8ee; border-color: #999; }
+        QPushButton:pressed { background: #d0d7e0; }
+        QPushButton:disabled { color: #aaa; background: #f5f5f5; }
+        QLineEdit {
+            border: 1px solid #ccc; border-radius: 3px; padding: 4px 8px;
+            background: #fff; color: #333;
+        }
+        QLineEdit:focus { border-color: #1E88E5; }
+        QProgressBar {
+            border: 1px solid #ccc; border-radius: 3px; text-align: center;
+            height: 14px; background: #fff; color: #333;
+        }
+        QProgressBar::chunk { background: #42A5F5; border-radius: 2px; }
+        QScrollArea { border: none; background: transparent; }
+        QStatusBar {
+            background: #e8e8e8; border-top: 1px solid #ccc; color: #666;
+        }
+        QTextEdit {
+            border: 1px solid #ccc; border-radius: 3px;
+            background: #fafbfc; color: #333;
+            font-family: Consolas, 'Microsoft YaHei', monospace;
+        }
+        QTableWidget {
+            border: 1px solid #d0d0d0; gridline-color: #e0e0e0;
+            background: #fff; color: #333;
+        }
+        QHeaderView::section {
+            background: #f0f0f0; padding: 4px;
+            border: none; border-bottom: 1px solid #d0d0d0; color: #333;
+        }
+        QTextBrowser {
+            border: 1px solid #d0d0d0; border-radius: 3px;
+            background: #fff; color: #333;
+        }
+        QScrollBar:vertical { width: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:vertical { background: #c0c0c0; border-radius: 4px; min-height: 20px; }
+        QScrollBar::handle:vertical:hover { background: #a0a0a0; }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        QScrollBar:horizontal { height: 8px; background: #f0f0f0; border-radius: 4px; }
+        QScrollBar::handle:horizontal { background: #c0c0c0; border-radius: 4px; min-width: 20px; }
+        QScrollBar::handle:horizontal:hover { background: #a0a0a0; }
+        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
+        QSplitter::handle { width: 5px; background: #ddd; border-radius: 2px; }
+        QSplitter::handle:hover { background: #42A5F5; }
+        QTabWidget::pane {
+            border: 1px solid #ccc; border-top: none;
+            border-radius: 0 0 4px 4px; background: #fff;
+        }
+        QTabBar::tab {
+            padding: 6px 14px; border: 1px solid #ddd; border-bottom: none;
+            border-radius: 4px 4px 0 0; background: #f5f5f5; color: #666;
+        }
+        QTabBar::tab:selected {
+            background: #fff; color: #0D47A1; font-weight: bold;
+            border-bottom: 2px solid #0D47A1;
+        }
+        QTabBar::tab:hover:!selected { background: #e8e8e8; }
+        QToolTip {
+            background: #fff; color: #333;
+            border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px;
+        }
+        QCheckBox { color: #333; }
+        QCheckBox::indicator {
+            width: 16px; height: 16px;
+            border: 1px solid #bbb; border-radius: 3px; background: #fff;
+        }
+        QCheckBox::indicator:checked {
+            background: #0D47A1; border-color: #0D47A1;
+        }
+        QLabel { color: #333; }
+        QGroupBox QLabel { color: #333; }
+        QSpinBox, QDoubleSpinBox {
+            border: 1px solid #ccc; border-radius: 3px;
+            padding: 2px 6px; background: #fff; color: #333;
+        }
+        QSpinBox:focus, QDoubleSpinBox:focus { border-color: #1E88E5; }
+        QSpinBox::up-button, QDoubleSpinBox::up-button {
+            border: none; border-left: 1px solid #ddd;
+            background: #f5f5f5; width: 18px;
+        }
+        QSpinBox::down-button, QDoubleSpinBox::down-button {
+            border: none; border-left: 1px solid #ddd;
+            background: #f5f5f5; width: 18px;
+        }
+        QComboBox {
+            border: 1px solid #ccc; border-radius: 3px;
+            padding: 3px 8px; background: #fff; color: #333;
+        }
+        QComboBox:focus { border-color: #1E88E5; }
+        QComboBox::drop-down {
+            border: none; border-left: 1px solid #ddd;
+            background: #f5f5f5; width: 20px;
+        }
+        QComboBox QAbstractItemView {
+            background: #fff; color: #333;
+            border: 1px solid #ccc; selection-background-color: #0D47A1;
+        }
+        QDialog { background: #E3F2FD; }
         """
 
     # ========================================================================
@@ -755,20 +1035,24 @@ class MainWindow(QMainWindow):
                     break
         if btn is None:
             return
+        tc = "#DCE4EC" if self._dark_mode else "#333"
         if passed:
+            hc = "#66BB6A" if self._dark_mode else "#388E3C"
             btn.setStyleSheet(
-                "QPushButton { border-left: 4px solid #4CAF50; padding-left: 8px; color: #DCE4EC; }"
-                "QPushButton:hover { border-left-color: #66BB6A; }"
+                f"QPushButton {{ border-left: 4px solid #4CAF50; padding-left: 8px; color: {tc}; }}"
+                f"QPushButton:hover {{ border-left-color: {hc}; }}"
             )
         else:
+            fc = "#EF5350" if self._dark_mode else "#F44336"
+            hc = "#F44336" if self._dark_mode else "#D32F2F"
             btn.setStyleSheet(
-                "QPushButton { border-left: 4px solid #EF5350; padding-left: 8px; color: #DCE4EC; }"
-                "QPushButton:hover { border-left-color: #F44336; }"
+                f"QPushButton {{ border-left: 4px solid {fc}; padding-left: 8px; color: {tc}; }}"
+                f"QPushButton:hover {{ border-left-color: {hc}; }}"
             )
 
     def _reset_button_styles(self):
         for btn in self._test_buttons.values():
-            btn.setStyleSheet("color: #DCE4EC;")
+            btn.setStyleSheet("color: #DCE4EC;" if self._dark_mode else "")
 
     # ── run button pulse animation ──────────────────────────────────
 
@@ -792,11 +1076,18 @@ class MainWindow(QMainWindow):
     def _on_pulse_tick(self, val):
         if not hasattr(self, '_pulse_btn') or not self._pulse_btn:
             return
-        r = int(36 + (30 - 36) * val)
-        g = int(52 + (65 - 52) * val)
-        b = int(71 + (100 - 71) * val)
+        if self._dark_mode:
+            r = int(36 + (30 - 36) * val)
+            g = int(52 + (65 - 52) * val)
+            b = int(71 + (100 - 71) * val)
+        else:
+            r = int(250 + (91 - 250) * val)
+            g = int(250 + (155 - 250) * val)
+            b = int(250 + (213 - 250) * val)
+        bc = "#42A5F5" if self._dark_mode else "#1E88E5"
+        tc = "#DCE4EC" if self._dark_mode else "#333"
         self._pulse_btn.setStyleSheet(
-            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: #42A5F5; color: #DCE4EC; }}"
+            f"QPushButton {{ background: rgb({r},{g},{b}); border-color: {bc}; color: {tc}; }}"
         )
 
     def _on_results_cleared(self):
@@ -950,31 +1241,33 @@ class MainWindow(QMainWindow):
         timestamp = datetime.now().strftime("%H:%M:%S")
         escaped = msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-        # ---- color-coded log lines ----
+        # ---- color-coded log lines (theme-aware) ----
+        d = self._dark_mode
         if "[ERROR]" in msg or "✗" in msg:
-            color = "#EF5350"
+            color = "#EF5350" if d else "#C62828"
             weight = "bold"
         elif "[WARN]" in msg:
-            color = "#FF9800"
+            color = "#FF9800" if d else "#E65100"
             weight = "normal"
         elif "PASS" in msg or "✓" in msg:
-            color = "#66BB6A"
+            color = "#66BB6A" if d else "#2E7D32"
             weight = "bold"
         elif "异常" in msg or "失败" in msg:
-            color = "#EF5350"
+            color = "#EF5350" if d else "#C62828"
             weight = "bold"
         elif msg.startswith("==="):
-            color = "#64B5F6"
+            color = "#64B5F6" if d else "#0D47A1"
             weight = "bold"
         elif msg.startswith("开始:") or msg.startswith("Running:"):
-            color = "#64B5F6"
+            color = "#64B5F6" if d else "#0D47A1"
             weight = "bold"
         else:
-            color = "#CDD6F4"
+            color = "#CDD6F4" if d else "#333333"
             weight = "normal"
+        ts_color = "#667788" if d else "#888888"
 
         line = (
-            f"<span style='color:#667788;'>[{timestamp}]</span> "
+            f"<span style='color:{ts_color};'>[{timestamp}]</span> "
             f"<span style='color:{color}; font-weight:{weight};'>{escaped}</span><br>"
         )
         self._log_view.moveCursor(self._log_view.textCursor().MoveOperation.End)
