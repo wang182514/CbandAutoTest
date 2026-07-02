@@ -122,10 +122,12 @@ class MainWindow(QMainWindow):
         # ---- left panel (scrollable so it fits small screens) ----
         left_scroll = QScrollArea()
         left_scroll.setWidgetResizable(True)
+        left_scroll.viewport().setStyleSheet("background: #0F1923;")
         left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         left_scroll.setMinimumWidth(260)
         left_scroll.setMaximumWidth(360)
         left_container = QWidget()
+        left_container.setStyleSheet("background: #0F1923;")
         left = QVBoxLayout(left_container)
         left.setStretch(0, 0)
 
@@ -253,6 +255,7 @@ class MainWindow(QMainWindow):
 
         # ---- right panel ----
         right_widget = QWidget()
+        right_widget.setStyleSheet("background: #0F1923;")
         right = QVBoxLayout(right_widget)
         right.setContentsMargins(0, 0, 0, 0)
 

@@ -61,6 +61,7 @@ class ResultsPanel(QWidget):
 
         # ---- dashboard row (compact chips) ----
         self._dashboard = QWidget()
+        self._dashboard.setStyleSheet("background: transparent;")
         self._dashboard.setFixedHeight(62)
         self._dash_layout = QHBoxLayout(self._dashboard)
         self._dash_layout.setContentsMargins(4, 2, 4, 2)
