@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QStatusBar, QSplitter, QApplication, QScrollArea, QSizePolicy,
     QGraphicsDropShadowEffect,
 )
-from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings, QVariantAnimation, QEvent
+from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSettings, QVariantAnimation
 from PySide6.QtGui import QColor
 
 from config.config_manager import ConfigManager
@@ -26,114 +26,10 @@ from utils.logger import Logger
 from utils.report import ReportGenerator, sanitize_results
 
 
-# ========================================================================
-#  Custom title bar (frameless window)
-# ========================================================================
-
-class _TitleBar(QWidget):
-    """Deep-blue gradient title bar with window controls and drag support."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("titleBar")
-        self.setFixedHeight(36)
-        self._drag_pos = None
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 6, 0)
-        layout.setSpacing(0)
-
-        # App icon
-        icon_lbl = QLabel("📡")
-        icon_lbl.setStyleSheet("font-size: 15px; background: transparent; border: none;")
-        layout.addWidget(icon_lbl)
-        layout.addSpacing(8)
-
-        # Title
-        title = QLabel("C波段射频模块自动化测试系统")
-        title.setStyleSheet(
-            "color: #fff; font-size: 12px; font-weight: bold;"
-            "background: transparent; border: none;"
-        )
-        layout.addWidget(title)
-        layout.addStretch()
-
-        # ── window buttons ──
-        btn_style = (
-            "QPushButton {{ color: #bbb; background: transparent;"
-            "border: none; border-radius: 4px; font-size: 12px; }}"
-            "QPushButton:hover {{ background: rgba(255,255,255,0.12); color: #fff; }}"
-        )
-
-        btn_min = QPushButton("─")
-        btn_min.setFixedSize(36, 28)
-        btn_min.setFlat(True)
-        btn_min.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_min.setStyleSheet(btn_style)
-        btn_min.clicked.connect(lambda: self.window().showMinimized())
-        layout.addWidget(btn_min)
-
-        self.btn_max = QPushButton("□")
-        self.btn_max.setFixedSize(36, 28)
-        self.btn_max.setFlat(True)
-        self.btn_max.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_max.setStyleSheet(btn_style)
-        self.btn_max.clicked.connect(self._toggle_maximize)
-        layout.addWidget(self.btn_max)
-
-        btn_close = QPushButton("✕")
-        btn_close.setFixedSize(36, 28)
-        btn_close.setFlat(True)
-        btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_close.setStyleSheet(
-            "QPushButton { color: #bbb; background: transparent;"
-            "border: none; border-radius: 4px; font-size: 13px; }"
-            "QPushButton:hover { background: #C62828; color: #fff; }"
-        )
-        btn_close.clicked.connect(lambda: self.window().close())
-        layout.addWidget(btn_close)
-
-    # ── drag ──────────────────────────────────────────────────────
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint()
-
-    def mouseMoveEvent(self, event):
-        if self._drag_pos is not None:
-            delta = event.globalPosition().toPoint() - self._drag_pos
-            self.window().move(self.window().pos() + delta)
-            self._drag_pos = event.globalPosition().toPoint()
-
-    def mouseReleaseEvent(self, event):
-        self._drag_pos = None
-
-    def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._toggle_maximize()
-
-    # ── maximize toggle ───────────────────────────────────────────
-
-    def _toggle_maximize(self):
-        if self.window().isMaximized():
-            self.window().showNormal()
-        else:
-            self.window().showMaximized()
-
-    def sync_max_button(self):
-        """Called by MainWindow.changeEvent to keep icon in sync."""
-        self.btn_max.setText("❐" if self.window().isMaximized() else "□")
-
-
-# ========================================================================
-#  Main Window
-# ========================================================================
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("C波段射频模块自动化测试系统")
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
         self.resize(1200, 800)
 
         # ---- config ----
@@ -196,14 +92,10 @@ class MainWindow(QMainWindow):
         wrapper.setContentsMargins(0, 0, 0, 0)
         wrapper.setSpacing(0)
 
-        # ---- custom title bar ----
-        self._title_bar = _TitleBar()
-        wrapper.addWidget(self._title_bar)
-
-        # ---- accent separator ----
+        # ---- accent bar below title bar ----
         accent = QWidget()
-        accent.setFixedHeight(2)
-        accent.setStyleSheet("background: #1E88E5;")
+        accent.setFixedHeight(3)
+        accent.setStyleSheet("background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #0D47A1,stop:1 #1E88E5);")
         wrapper.addWidget(accent)
 
         root = QHBoxLayout()
@@ -385,7 +277,6 @@ class MainWindow(QMainWindow):
 
         # ---- status bar ----
         self._status = QStatusBar()
-        self._status.setSizeGripEnabled(True)
         self._status.showMessage("就绪")
         self.setStatusBar(self._status)
 
@@ -616,11 +507,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _global_qss() -> str:
         return """
-        QMainWindow { background: #E3F2FD; border: 2px solid #0D47A1; }
-        #titleBar {
-            background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                stop:0 #071D3D, stop:1 #0D47A1);
-        }
+        QMainWindow { background: #E3F2FD; border: 2px solid #64B5F6; }
         QGroupBox {
             font-weight: bold; border: 1px solid #90CAF9; border-radius: 8px;
             margin-top: 10px; margin-bottom: 4px;
@@ -693,16 +580,6 @@ class MainWindow(QMainWindow):
         splitter_state = s.value("window/splitter")
         if splitter_state is not None:
             self._main_splitter.restoreState(splitter_state)
-
-    # ========================================================================
-    #  Window state (maximize button sync)
-    # ========================================================================
-
-    def changeEvent(self, event: QEvent):
-        if event.type() == QEvent.Type.WindowStateChange:
-            if hasattr(self, '_title_bar'):
-                self._title_bar.sync_max_button()
-        super().changeEvent(event)
 
     # ========================================================================
     #  Window close
