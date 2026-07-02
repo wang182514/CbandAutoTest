@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(self._global_qss())
 
         # ---- window icon ----
-        from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+        from PySide6.QtGui import QIcon, QPixmap, QPainter, QFont
         pm = QPixmap(32, 32)
         pm.fill(Qt.GlobalColor.transparent)
         p = QPainter(pm)
