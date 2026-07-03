@@ -266,7 +266,10 @@ class MainWindow(QMainWindow):
         self._results_panel.cleared.connect(self._on_results_cleared)
         # Pre-populate card placeholders from registry
         from ui.test_runner import TEST_REGISTRY
-        self._results_panel.set_test_names([info["name"] for info in TEST_REGISTRY.values()])
+        # filter out hidden tests
+        visible_names = [info["name"] for info in TEST_REGISTRY.values()
+                         if info["id"] not in ("rx_nf_v2", "rx_oob_sa")]
+        self._results_panel.set_test_names(visible_names)
         right.addWidget(self._results_panel, 2)
 
         # Log output
