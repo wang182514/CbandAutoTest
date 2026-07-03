@@ -215,6 +215,9 @@ class MainWindow(QMainWindow):
                     self._cat_tx_lbl = cat_lbl
             for info in groups[cat]:
                 tid = info["id"]
+                # temporarily hide out-of-band rejection buttons
+                if tid in ("rx_nf_v2", "rx_oob_sa"):
+                    continue
                 btn = QPushButton(info["name"])
                 btn.setObjectName(tid)
                 btn.setMaximumWidth(320)

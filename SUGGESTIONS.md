@@ -13,6 +13,7 @@
 ### 2. 无边框窗口 (FramelessWindowHint)
 
 这个项目三次尝试自定义标题栏，三次失败：
+
 - **第一次**：自定义标题栏 + `QHBoxLayout→QVBoxLayout` 嵌套导致布局错乱，splitter 引用断裂
 - **第二次**：按钮 `min-height` 被全局 QSS 覆盖导致标题栏按钮不可见
 - **第三次**：边缘拖拽缩放的 `mouseMoveEvent` 和标题栏拖拽的 `mousePressEvent` 竞争
@@ -150,14 +151,14 @@ def run_xxx(base: TestBase) -> TestResult:
 
 ## 六、常见 Bug 模式
 
-| 症状 | 根因 | 排查方向 |
-|------|------|----------|
-| 卡片不显示 PASS/FAIL | `_summary_text` 对空数据格式化崩溃 | 检查 `_on_test_result` 是否传了空 data |
-| 按钮灰色不响应 | `_update_button_state` 漏调用 | 检查 `set_result` 末尾是否调了 |
-| 进度条不动 | 子进度回调未注入 | `base.set_progress_callback` 是否在 runner 中调用了 |
-| 客户报告数据莫名修正 | 平坦度 > 2.0 触发 | 检查 `scalar_metrics` 中的阈值 |
-| DOCX 书签全部未找到 | 书签在表格单元格内，父段落是 `w:tc` | 改用 `body.iter(bookmarkStart)` 搜全部 |
-| 相噪显示错位 | `\n` 在 Word XML 中为空格 | 拆分多行插 `<w:br/>` |
+| 症状              | 根因                         | 排查方向                                         |
+| --------------- | -------------------------- | -------------------------------------------- |
+| 卡片不显示 PASS/FAIL | `_summary_text` 对空数据格式化崩溃  | 检查 `_on_test_result` 是否传了空 data              |
+| 按钮灰色不响应         | `_update_button_state` 漏调用 | 检查 `set_result` 末尾是否调了                       |
+| 进度条不动           | 子进度回调未注入                   | `base.set_progress_callback` 是否在 runner 中调用了 |
+| 客户报告数据莫名修正      | 平坦度 > 2.0 触发               | 检查 `scalar_metrics` 中的阈值                     |
+| DOCX 书签全部未找到    | 书签在表格单元格内，父段落是 `w:tc`      | 改用 `body.iter(bookmarkStart)` 搜全部            |
+| 相噪显示错位          | `\n` 在 Word XML 中为空格       | 拆分多行插 `<w:br/>`                              |
 
 ---
 
