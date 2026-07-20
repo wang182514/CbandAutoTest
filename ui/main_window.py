@@ -143,8 +143,34 @@ class MainWindow(QMainWindow):
         self._lbl_switch = QLabel("开关矩阵: 未连接")
         self._lbl_switch.setWordWrap(True)
 
-        g1.addLayout(self._status_row(self._ind_rx_pwr, self._lbl_rx_pwr))
-        g1.addLayout(self._status_row(self._ind_tx_pwr, self._lbl_tx_pwr))
+        # GPP-4323 specific (hidden in TCP mode)
+        self._gpp_lbl = QLabel("GPP-4323 四通道电源: 未连接")
+        self._gpp_lbl.setWordWrap(True)
+        self._gpp_ind = self._create_status_indicator()
+        self._gpp_ch1_ind = self._create_status_indicator()
+        self._gpp_ch2_ind = self._create_status_indicator()
+        self._gpp_ch1_lbl = QLabel("CH1/RX 12V")
+        self._gpp_ch2_lbl = QLabel("CH2/TX 24V")
+        self._gpp_ch1_row = self._status_row(self._gpp_ch1_ind, self._gpp_ch1_lbl)
+        self._gpp_ch2_row = self._status_row(self._gpp_ch2_ind, self._gpp_ch2_lbl)
+        gpp_ch_row = QHBoxLayout()
+        gpp_ch_row.addLayout(self._gpp_ch1_row)
+        gpp_ch_row.addSpacing(20)
+        gpp_ch_row.addLayout(self._gpp_ch2_row)
+        gpp_ch_row.addStretch()
+
+        self._gpp_row = self._status_row(self._gpp_ind, self._gpp_lbl)
+
+        # TCP mode rows
+        self._rx_row = self._status_row(self._ind_rx_pwr, self._lbl_rx_pwr)
+        self._tx_row = self._status_row(self._ind_tx_pwr, self._lbl_tx_pwr)
+        g1.addLayout(self._rx_row)
+        g1.addLayout(self._tx_row)
+
+        # GPP rows (hidden/visible depending on mode)
+        g1.addLayout(self._gpp_row)
+        g1.addLayout(gpp_ch_row)
+
         g1.addLayout(self._status_row(self._ind_vsg, self._lbl_vsg))
         g1.addLayout(self._status_row(self._ind_sa, self._lbl_sa))
         g1.addLayout(self._status_row(self._ind_switch, self._lbl_switch))
@@ -309,6 +335,31 @@ class MainWindow(QMainWindow):
         # ---- apply theme-dependent inline styles ----
         self._apply_inline_styles()
 
+        # ---- apply power supply mode (GPP vs TCP) ----
+        self._apply_psu_mode()
+
+    def _apply_psu_mode(self):
+        """Show GPP rows or TCP rows based on power_supply_type config."""
+        psu_type = self.config.get("instruments.power_supply_type", "gwinstek_tcp")
+        is_gpp = (psu_type == "gpp4323")
+        self._rx_row.setEnabled(not is_gpp)
+        self._tx_row.setEnabled(not is_gpp)
+        self._lbl_rx_pwr.setVisible(not is_gpp)
+        self._lbl_tx_pwr.setVisible(not is_gpp)
+        self._ind_rx_pwr.setVisible(not is_gpp)
+        self._ind_tx_pwr.setVisible(not is_gpp)
+        self._gpp_row.setEnabled(is_gpp)
+        self._gpp_lbl.setVisible(is_gpp)
+        self._gpp_ind.setVisible(is_gpp)
+        self._gpp_ch1_row.setEnabled(is_gpp)
+        self._gpp_ch2_row.setEnabled(is_gpp)
+        self._gpp_ch1_ind.setVisible(is_gpp)
+        self._gpp_ch2_ind.setVisible(is_gpp)
+        self._gpp_ch1_lbl.setVisible(is_gpp)
+        self._gpp_ch2_lbl.setVisible(is_gpp)
+
+    # ========================================================================
+
     # ========================================================================
     #  Status indicator helpers
     # ========================================================================
@@ -429,9 +480,15 @@ class MainWindow(QMainWindow):
                     timeout_sec=cfg.rx_power_supply.timeout_sec,
                 )
             idn = self._rx_pwr.connect()
-            self._lbl_rx_pwr.setText("接收电源: ✓ 已连接")
-            self._lbl_rx_pwr.setToolTip(idn)
-            self._set_status_indicator(self._ind_rx_pwr, "ok")
+            if psu_type == "gpp4323":
+                self._gpp_lbl.setText("GPP-4323 四通道电源: ✓ 已连接")
+                self._gpp_lbl.setToolTip(idn)
+                self._set_status_indicator(self._gpp_ind, "ok")
+                self._set_status_indicator(self._gpp_ch1_ind, "ok")
+            else:
+                self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
+                self._lbl_rx_pwr.setToolTip(idn)
+                self._set_status_indicator(self._ind_rx_pwr, "ok")
             self._log(f"  RX电源: {idn}")
         except Exception as e:
             self._lbl_rx_pwr.setText(f"接收电源: ✗ {e}")
@@ -451,9 +508,13 @@ class MainWindow(QMainWindow):
                     timeout_sec=cfg.tx_power_supply.timeout_sec,
                 )
             idn = self._tx_pwr.connect()
-            self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
-            self._lbl_tx_pwr.setToolTip(idn)
-            self._set_status_indicator(self._ind_tx_pwr, "ok")
+            if psu_type == "gpp4323":
+                self._gpp_lbl.setToolTip(idn)
+                self._set_status_indicator(self._gpp_ch2_ind, "ok")
+            else:
+                self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
+                self._lbl_tx_pwr.setToolTip(idn)
+                self._set_status_indicator(self._ind_tx_pwr, "ok")
             self._log(f"  TX电源: {idn}")
         except Exception as e:
             self._lbl_tx_pwr.setText(f"发射电源: ✗ {e}")
@@ -526,6 +587,8 @@ class MainWindow(QMainWindow):
         self._lbl_rx_pwr.setToolTip("")
         self._lbl_tx_pwr.setText("发射电源: 未连接")
         self._lbl_tx_pwr.setToolTip("")
+        self._gpp_lbl.setText("GPP-4323 四通道电源: 未连接")
+        self._gpp_lbl.setToolTip("")
         self._lbl_vsg.setText("信号源: 未连接")
         self._lbl_vsg.setToolTip("")
         self._lbl_sa.setText("频谱仪: 未连接")
@@ -533,7 +596,8 @@ class MainWindow(QMainWindow):
         self._lbl_switch.setText("开关矩阵: 未连接")
         self._lbl_switch.setToolTip("")
         for ind in [self._ind_rx_pwr, self._ind_tx_pwr, self._ind_vsg,
-                    self._ind_sa, self._ind_switch]:
+                    self._ind_sa, self._ind_switch,
+                    self._gpp_ind, self._gpp_ch1_ind, self._gpp_ch2_ind]:
             self._set_status_indicator(ind, "idle")
         self._log("=== 已断开全部仪表 ===")
         self._status.showMessage("已断开全部仪表")
