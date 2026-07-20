@@ -33,7 +33,7 @@ class Gpp4323:
     # ---- 类级共享 (所有通道实例共用) ----
     _shared_port: serial.Serial | None = None
     _shared_port_name: str | None = None
-    _lock = threading.Lock()
+    _lock = threading.RLock()
     _ref_count: int = 0
 
     def __init__(self, port: str, channel: int, baud_rate: int = 9600):
