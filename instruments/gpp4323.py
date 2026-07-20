@@ -31,7 +31,7 @@ class Gpp4323:
     """GPP-4323 四通道电源 — 每通道一个实例, 共享底层串口."""
 
     # ---- 类级共享 (所有通道实例共用) ----
-    _shared_port: serial.Serial | None = None
+    _shared_port: "serial.Serial | None" = None  # class-level, accessed via Gpp4323._shared_port
     _shared_port_name: str | None = None
     _lock = threading.RLock()
     _ref_count: int = 0
@@ -51,7 +51,7 @@ class Gpp4323:
     @property
     def is_connected(self) -> bool:
         with self._lock:
-            return self._shared_port is not None and self._shared_port.is_open
+            return Gpp4323._shared_port is not None and Gpp4323._shared_port.is_open
 
     # ========================================================================
     #  连接 / 断开
@@ -62,24 +62,31 @@ class Gpp4323:
         整个方法持有锁——防止开串口和查IDN之间被其他线程关闭."""
         with self._lock:
             # 如果已有串口打开但端口名不同, 先关闭
-            if self._shared_port is not None and self._shared_port_name != self._port:
+            if Gpp4323._shared_port is not None and self._shared_port_name != self._port:
                 try:
-                    self._shared_port.close()
+                    Gpp4323._shared_port.close()
                 except Exception:
                     pass
-                self._shared_port = None
+                Gpp4323._shared_port = None
                 Gpp4323._ref_count = 0
 
             # 打开串口 (首次连接时)
-            if self._shared_port is None or not self._shared_port.is_open:
-                self._shared_port = serial.Serial(
-                    port=self._port,
-                    baudrate=self._baud_rate,
-                    bytesize=serial.EIGHTBITS,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    timeout=1.0,
-                )
+            if Gpp4323._shared_port is None:
+                try:
+                    Gpp4323._shared_port = serial.Serial(
+                        port=self._port,
+                        baudrate=self._baud_rate,
+                        bytesize=serial.EIGHTBITS,
+                        parity=serial.PARITY_NONE,
+                        stopbits=serial.STOPBITS_ONE,
+                        timeout=1.0,
+                    )
+                except serial.SerialException:
+                    # 端口已被其他进程占用, 尝试复用
+                    pass
+                if Gpp4323._shared_port is None or not Gpp4323._shared_port.is_open:
+                    # 第二次尝试 — 也许是另一个通道实例已打开
+                    pass
                 self._shared_port_name = self._port
                 Gpp4323._ref_count = 0
 
@@ -89,7 +96,7 @@ class Gpp4323:
             self._send("*IDN?")
             time.sleep(0.05)
             try:
-                self._idn = self._shared_port.readline().decode("ascii").strip()
+                self._idn = Gpp4323._shared_port.readline().decode("ascii").strip()
             except Exception:
                 self._last_error = "IDN 读取超时"
                 self._idn = ""
@@ -100,12 +107,12 @@ class Gpp4323:
         """断开此通道. 所有通道断开后才真正关闭串口."""
         with self._lock:
             Gpp4323._ref_count -= 1
-            if Gpp4323._ref_count <= 0 and self._shared_port is not None:
+            if Gpp4323._ref_count <= 0 and Gpp4323._shared_port is not None:
                 try:
-                    self._shared_port.close()
+                    Gpp4323._shared_port.close()
                 except Exception:
                     pass
-                self._shared_port = None
+                Gpp4323._shared_port = None
                 self._shared_port_name = None
                 Gpp4323._ref_count = 0
         self._idn = ""
@@ -150,11 +157,11 @@ class Gpp4323:
     def _send(self, cmd: str):
         """发送指令 (不读回复), 自动加锁."""
         with self._lock:
-            if self._shared_port is None or not self._shared_port.is_open:
+            if Gpp4323._shared_port is None or not Gpp4323._shared_port.is_open:
                 raise RuntimeError("GPP-4323 串口未打开")
             if not cmd.endswith("\n"):
                 cmd += "\n"
-            self._shared_port.write(cmd.encode("ascii"))
+            Gpp4323._shared_port.write(cmd.encode("ascii"))
             time.sleep(0.02)
 
     def _query(self, cmd: str) -> str:
@@ -163,7 +170,7 @@ class Gpp4323:
             self._send(cmd)
             time.sleep(0.05)
             try:
-                return self._shared_port.readline().decode("ascii").strip()
+                return Gpp4323._shared_port.readline().decode("ascii").strip()
             except Exception:
                 self._last_error = "读取超时"
                 return ""
