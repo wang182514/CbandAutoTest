@@ -491,6 +491,8 @@ class MainWindow(QMainWindow):
                 self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
                 self._lbl_rx_pwr.setToolTip(idn)
                 self._set_status_indicator(self._ind_rx_pwr, "ok")
+                self._rx_pwr.set_voltage(12.0)
+                self._rx_pwr.set_current(1.0)
             self._log(f"  RX电源: {idn}")
         except Exception as e:
             self._lbl_rx_pwr.setText(f"接收电源: ✗ {e}")
@@ -519,6 +521,8 @@ class MainWindow(QMainWindow):
                 self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
                 self._lbl_tx_pwr.setToolTip(idn)
                 self._set_status_indicator(self._ind_tx_pwr, "ok")
+                self._tx_pwr.set_voltage(24.0)
+                self._tx_pwr.set_current(1.0)
             self._log(f"  TX电源: {idn}")
         except Exception as e:
             self._lbl_tx_pwr.setText(f"发射电源: ✗ {e}")
