@@ -9,6 +9,13 @@
     "test_date": "2026.06.10",
 
     "instruments": {
+        "power_supply_type": "gpp4323",
+        "gpp4323": {
+            "serial_port": "COM11",
+            "baud_rate": 9600,
+            "ch_rx": 1,
+            "ch_tx": 2
+        },
         "rx_power_supply": {
             "ip": "192.168.1.11",
             "port": 2268,

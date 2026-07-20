@@ -65,13 +65,32 @@ class SettingsDialog(QDialog):
 
         c = self._cfg.data.instruments
 
-        # RX Power
+        # Power supply type dropdown
+        psu_type = self._cfg.data.get("instruments.power_supply_type", "gwinstek_tcp") if hasattr(self._cfg, 'get') else "gwinstek_tcp"
+        try:
+            psu_type = self._cfg.data.instruments.power_supply_type or "gwinstek_tcp"
+        except Exception:
+            psu_type = "gwinstek_tcp"
+
+        self._psu_type_combo = QComboBox()
+        self._psu_type_combo.addItems(["GPP-4323 (四通道 USB)", "GWInstek (单通道 TCP)"])
+        self._psu_type_combo.setCurrentIndex(0 if psu_type == "gpp4323" else 1)
+        self._psu_type_combo.currentIndexChanged.connect(self._on_psu_type_changed)
+        l.addRow("电源类型:", self._psu_type_combo)
+
+        # GPP-4323 settings (shown when gpp4323 selected)
+        self._gpp4323_com = self._add_line(l, "GPP4323 串口", c.get("gpp4323.serial_port", "COM11"))
+        self._gpp4323_baud = self._add_spin(l, "GPP4323 波特率", int(c.get("gpp4323.baud_rate", "9600")), 1200, 921600)
+        self._gpp4323_ch_rx = self._add_spin(l, "GPP4323 RX通道", int(c.get("gpp4323.ch_rx", "1")), 1, 4)
+        self._gpp4323_ch_tx = self._add_spin(l, "GPP4323 TX通道", int(c.get("gpp4323.ch_tx", "2")), 1, 4)
+
+        # TCP power supply (shown when gwinstek_tcp selected)
         self._rx_pwr_ip = self._add_line(l, "RX电源 IP", c.rx_power_supply.ip)
         self._rx_pwr_port = self._add_spin(l, "RX电源端口", c.rx_power_supply.port, 1, 65535)
-
-        # TX Power
         self._tx_pwr_ip = self._add_line(l, "TX电源 IP", c.tx_power_supply.ip)
         self._tx_pwr_port = self._add_spin(l, "TX电源端口", c.tx_power_supply.port, 1, 65535)
+
+        self._on_psu_type_changed(self._psu_type_combo.currentIndex())
 
         # VSG
         self._vsg_ip = self._add_line(l, "信号源 IP", c.signal_generator.ip)
@@ -326,6 +345,14 @@ class SettingsDialog(QDialog):
     #  Load / Save
     # ========================================================================
 
+    def _on_psu_type_changed(self, index: int):
+        """Show/hide GPP4323 vs TCP power supply fields."""
+        is_gpp = (index == 0)
+        for w in [self._gpp4323_com, self._gpp4323_baud, self._gpp4323_ch_rx, self._gpp4323_ch_tx]:
+            w.setVisible(is_gpp)
+        for w in [self._rx_pwr_ip, self._rx_pwr_port, self._tx_pwr_ip, self._tx_pwr_port]:
+            w.setVisible(not is_gpp)
+
     def _load_all(self):
         """UI is already pre-populated in _tab_* methods from config."""
         pass
@@ -335,6 +362,11 @@ class SettingsDialog(QDialog):
         c = self._cfg.data
 
         # Instruments
+        c.instruments.power_supply_type = "gpp4323" if self._psu_type_combo.currentIndex() == 0 else "gwinstek_tcp"
+        c.instruments.gpp4323.serial_port = self._gpp4323_com.text()
+        c.instruments.gpp4323.baud_rate = self._gpp4323_baud.value()
+        c.instruments.gpp4323.ch_rx = self._gpp4323_ch_rx.value()
+        c.instruments.gpp4323.ch_tx = self._gpp4323_ch_tx.value()
         c.instruments.rx_power_supply.ip = self._rx_pwr_ip.text()
         c.instruments.rx_power_supply.port = self._rx_pwr_port.value()
         c.instruments.tx_power_supply.ip = self._tx_pwr_ip.text()

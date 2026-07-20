@@ -405,6 +405,7 @@ class MainWindow(QMainWindow):
     def _on_connect_all(self):
         """Connect all 4 instruments + switch matrix."""
         from instruments.power_supply import PowerSupply
+        from instruments.gpp4323 import Gpp4323
         from instruments.signal_generator import SignalGenerator
         from instruments.spectrum_analyzer import SpectrumAnalyzer
         from instruments.switch_matrix import SwitchMatrix
@@ -416,11 +417,17 @@ class MainWindow(QMainWindow):
 
         # RX Power Supply
         try:
-            self._rx_pwr = PowerSupply(
-                ip=cfg.rx_power_supply.ip,
-                port=cfg.rx_power_supply.port,
-                timeout_sec=cfg.rx_power_supply.timeout_sec,
-            )
+            # ---- RX Power Supply ----
+            psu_type = self.config.get("instruments.power_supply_type", "gwinstek_tcp")
+            if psu_type == "gpp4323":
+                gpp_cfg = self.config.data.instruments.gpp4323
+                self._rx_pwr = Gpp4323(port=gpp_cfg.serial_port, channel=gpp_cfg.ch_rx, baud_rate=gpp_cfg.baud_rate)
+            else:
+                self._rx_pwr = PowerSupply(
+                    ip=cfg.rx_power_supply.ip,
+                    port=cfg.rx_power_supply.port,
+                    timeout_sec=cfg.rx_power_supply.timeout_sec,
+                )
             idn = self._rx_pwr.connect()
             self._lbl_rx_pwr.setText("接收电源: ✓ 已连接")
             self._lbl_rx_pwr.setToolTip(idn)
@@ -433,11 +440,16 @@ class MainWindow(QMainWindow):
 
         # TX Power Supply
         try:
-            self._tx_pwr = PowerSupply(
-                ip=cfg.tx_power_supply.ip,
-                port=cfg.tx_power_supply.port,
-                timeout_sec=cfg.tx_power_supply.timeout_sec,
-            )
+            # ---- TX Power Supply ----
+            if psu_type == "gpp4323":
+                gpp_cfg = self.config.data.instruments.gpp4323
+                self._tx_pwr = Gpp4323(port=gpp_cfg.serial_port, channel=gpp_cfg.ch_tx, baud_rate=gpp_cfg.baud_rate)
+            else:
+                self._tx_pwr = PowerSupply(
+                    ip=cfg.tx_power_supply.ip,
+                    port=cfg.tx_power_supply.port,
+                    timeout_sec=cfg.tx_power_supply.timeout_sec,
+                )
             idn = self._tx_pwr.connect()
             self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
             self._lbl_tx_pwr.setToolTip(idn)
