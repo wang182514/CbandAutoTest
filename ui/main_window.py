@@ -485,6 +485,8 @@ class MainWindow(QMainWindow):
                 self._gpp_lbl.setToolTip(idn)
                 self._set_status_indicator(self._gpp_ind, "ok")
                 self._set_status_indicator(self._gpp_ch1_ind, "ok")
+                self._rx_pwr.set_voltage(12.0)
+                self._rx_pwr.set_current(1.0)
             else:
                 self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
                 self._lbl_rx_pwr.setToolTip(idn)
@@ -511,6 +513,8 @@ class MainWindow(QMainWindow):
             if psu_type == "gpp4323":
                 self._gpp_lbl.setToolTip(idn)
                 self._set_status_indicator(self._gpp_ch2_ind, "ok")
+                self._tx_pwr.set_voltage(24.0)
+                self._tx_pwr.set_current(1.0)
             else:
                 self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
                 self._lbl_tx_pwr.setToolTip(idn)
