@@ -58,7 +58,8 @@ class Gpp4323:
     # ========================================================================
 
     def connect(self) -> str:
-        """打开共享串口, 查询 IDN. 返回 IDN 字符串."""
+        """打开共享串口, 查询 IDN. 返回 IDN 字符串.
+        整个方法持有锁——防止开串口和查IDN之间被其他线程关闭."""
         with self._lock:
             # 如果已有串口打开但端口名不同, 先关闭
             if self._shared_port is not None and self._shared_port_name != self._port:
@@ -84,8 +85,15 @@ class Gpp4323:
 
             Gpp4323._ref_count += 1
 
-        # 查询 IDN
-        self._idn = self._query("*IDN?")
+            # 查询 IDN——锁仍然持有，不会被其他线程打断
+            self._send("*IDN?")
+            time.sleep(0.05)
+            try:
+                self._idn = self._shared_port.readline().decode("ascii").strip()
+            except Exception:
+                self._last_error = "IDN 读取超时"
+                self._idn = ""
+
         return self._idn
 
     def disconnect(self):
