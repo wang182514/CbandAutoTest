@@ -495,8 +495,12 @@ class MainWindow(QMainWindow):
                 self._rx_pwr.set_current(1.0)
             self._log(f"  RX电源: {idn}")
         except Exception as e:
-            self._lbl_rx_pwr.setText(f"接收电源: ✗ {e}")
-            self._set_status_indicator(self._ind_rx_pwr, "error")
+            if psu_type == "gpp4323":
+                self._gpp_lbl.setText(f"GPP-4323 四通道电源: ✗ {e}")
+                self._set_status_indicator(self._gpp_ch1_ind, "error")
+            else:
+                self._lbl_rx_pwr.setText(f"接收电源: ✗ {e}")
+                self._set_status_indicator(self._ind_rx_pwr, "error")
             self._log(f"  RX电源失败: {e}")
 
         # TX Power Supply
@@ -525,8 +529,11 @@ class MainWindow(QMainWindow):
                 self._tx_pwr.set_current(1.0)
             self._log(f"  TX电源: {idn}")
         except Exception as e:
-            self._lbl_tx_pwr.setText(f"发射电源: ✗ {e}")
-            self._set_status_indicator(self._ind_tx_pwr, "error")
+            if psu_type == "gpp4323":
+                self._set_status_indicator(self._gpp_ch2_ind, "error")
+            else:
+                self._lbl_tx_pwr.setText(f"发射电源: ✗ {e}")
+                self._set_status_indicator(self._ind_tx_pwr, "error")
             self._log(f"  TX电源失败: {e}")
 
         # Signal Generator
@@ -1092,21 +1099,30 @@ class MainWindow(QMainWindow):
 
     def _safe_stop_instruments(self):
         """Immediately shut off RF and power for safety (called on stop)."""
-        for obj, name in [
-            (self._vsg, "VSG RF"),
-            (self._rx_pwr, "RX 电源"),
-            (self._tx_pwr, "TX 电源"),
-        ]:
-            if obj is None:
-                continue
+        try:
+            if self._vsg:
+                self._vsg.rf_off()
+                self._vsg.set_cw_mode()
+        except Exception:
+            pass
+        # GPP: shared port — handle both channels via their respective objects
+        from instruments.gpp4323 import Gpp4323
+        if isinstance(self._rx_pwr, Gpp4323) and isinstance(self._tx_pwr, Gpp4323):
             try:
-                if name == "VSG RF":
-                    obj.rf_off()
-                    obj.set_cw_mode()
-                else:
-                    obj.set_output(False)
+                self._rx_pwr.set_output(False)
             except Exception:
                 pass
+            try:
+                self._tx_pwr.set_output(False)
+            except Exception:
+                pass
+        else:
+            for pwr in (self._rx_pwr, self._tx_pwr):
+                if pwr:
+                    try:
+                        pwr.set_output(False)
+                    except Exception:
+                        pass
 
     def _on_test_result(self, test_name: str, passed: bool, messages: list, data: dict = None):
         if data is None:
