@@ -83,12 +83,20 @@ class SettingsDialog(QDialog):
         self._gpp4323_baud = self._add_spin(l, "GPP4323 波特率", int(c.get("gpp4323.baud_rate", "9600")), 1200, 921600)
         self._gpp4323_ch_rx = self._add_spin(l, "GPP4323 RX通道", int(c.get("gpp4323.ch_rx", "1")), 1, 4)
         self._gpp4323_ch_tx = self._add_spin(l, "GPP4323 TX通道", int(c.get("gpp4323.ch_tx", "2")), 1, 4)
+        self._gpp4323_rx_v = self._add_double(l, "RX电压 (V)", c.get("gpp4323.rx_voltage", "12.0"), 0, 60)
+        self._gpp4323_rx_c = self._add_double(l, "RX电流 (A)", c.get("gpp4323.rx_current", "1.0"), 0, 10)
+        self._gpp4323_tx_v = self._add_double(l, "TX电压 (V)", c.get("gpp4323.tx_voltage", "24.0"), 0, 60)
+        self._gpp4323_tx_c = self._add_double(l, "TX电流 (A)", c.get("gpp4323.tx_current", "1.0"), 0, 10)
 
         # TCP power supply (shown when gwinstek_tcp selected)
         self._rx_pwr_ip = self._add_line(l, "RX电源 IP", c.rx_power_supply.ip)
         self._rx_pwr_port = self._add_spin(l, "RX电源端口", c.rx_power_supply.port, 1, 65535)
         self._tx_pwr_ip = self._add_line(l, "TX电源 IP", c.tx_power_supply.ip)
         self._tx_pwr_port = self._add_spin(l, "TX电源端口", c.tx_power_supply.port, 1, 65535)
+        self._rx_pwr_v = self._add_double(l, "RX电压 (V)", c.get("rx_power_supply.voltage", "12.0"), 0, 60)
+        self._rx_pwr_c = self._add_double(l, "RX电流 (A)", c.get("rx_power_supply.current", "1.0"), 0, 10)
+        self._tx_pwr_v = self._add_double(l, "TX电压 (V)", c.get("tx_power_supply.voltage", "24.0"), 0, 60)
+        self._tx_pwr_c = self._add_double(l, "TX电流 (A)", c.get("tx_power_supply.current", "1.0"), 0, 10)
 
         self._on_psu_type_changed(self._psu_type_combo.currentIndex())
 
@@ -348,9 +356,13 @@ class SettingsDialog(QDialog):
     def _on_psu_type_changed(self, index: int):
         """Show/hide GPP4323 vs TCP power supply fields."""
         is_gpp = (index == 0)
-        for w in [self._gpp4323_com, self._gpp4323_baud, self._gpp4323_ch_rx, self._gpp4323_ch_tx]:
+        gpp_fields = [self._gpp4323_com, self._gpp4323_baud, self._gpp4323_ch_rx, self._gpp4323_ch_tx,
+                       self._gpp4323_rx_v, self._gpp4323_rx_c, self._gpp4323_tx_v, self._gpp4323_tx_c]
+        tcp_fields = [self._rx_pwr_ip, self._rx_pwr_port, self._tx_pwr_ip, self._tx_pwr_port,
+                       self._rx_pwr_v, self._rx_pwr_c, self._tx_pwr_v, self._tx_pwr_c]
+        for w in gpp_fields:
             w.setVisible(is_gpp)
-        for w in [self._rx_pwr_ip, self._rx_pwr_port, self._tx_pwr_ip, self._tx_pwr_port]:
+        for w in tcp_fields:
             w.setVisible(not is_gpp)
 
     def _load_all(self):
@@ -367,10 +379,18 @@ class SettingsDialog(QDialog):
         c.instruments.gpp4323.baud_rate = self._gpp4323_baud.value()
         c.instruments.gpp4323.ch_rx = self._gpp4323_ch_rx.value()
         c.instruments.gpp4323.ch_tx = self._gpp4323_ch_tx.value()
+        c.instruments.gpp4323.rx_voltage = self._gpp4323_rx_v.value()
+        c.instruments.gpp4323.rx_current = self._gpp4323_rx_c.value()
+        c.instruments.gpp4323.tx_voltage = self._gpp4323_tx_v.value()
+        c.instruments.gpp4323.tx_current = self._gpp4323_tx_c.value()
         c.instruments.rx_power_supply.ip = self._rx_pwr_ip.text()
         c.instruments.rx_power_supply.port = self._rx_pwr_port.value()
         c.instruments.tx_power_supply.ip = self._tx_pwr_ip.text()
         c.instruments.tx_power_supply.port = self._tx_pwr_port.value()
+        c.instruments.rx_power_supply.voltage = self._rx_pwr_v.value()
+        c.instruments.rx_power_supply.current = self._rx_pwr_c.value()
+        c.instruments.tx_power_supply.voltage = self._tx_pwr_v.value()
+        c.instruments.tx_power_supply.current = self._tx_pwr_c.value()
         c.instruments.signal_generator.ip = self._vsg_ip.text()
         c.instruments.signal_generator.vendor = self._vsg_vendor.text()
         c.instruments.spectrum_analyzer.ip = self._sa_ip.text()
