@@ -475,16 +475,11 @@ class MainWindow(QMainWindow):
             if psu_type == "gpp4323":
                 gpp_cfg = self.config.data.instruments.gpp4323
                 self._rx_pwr = Gpp4323(port=gpp_cfg.serial_port, channel=gpp_cfg.ch_rx, baud_rate=gpp_cfg.baud_rate)
-                rx_v = float(gpp_cfg.rx_voltage or "12.0")
-                rx_c = float(gpp_cfg.rx_current or "1.0")
             else:
                 self._rx_pwr = PowerSupply(
-                    ip=cfg.rx_power_supply.ip,
-                    port=cfg.rx_power_supply.port,
+                    ip=cfg.rx_power_supply.ip, port=cfg.rx_power_supply.port,
                     timeout_sec=cfg.rx_power_supply.timeout_sec,
                 )
-                rx_v = float(cfg.rx_power_supply.voltage or "12.0")
-                rx_c = float(cfg.rx_power_supply.current or "1.0")
             idn = self._rx_pwr.connect()
             if psu_type == "gpp4323":
                 self._gpp_lbl.setText("GPP-4323 四通道电源: ✓ 已连接")
@@ -495,8 +490,6 @@ class MainWindow(QMainWindow):
                 self._lbl_rx_pwr.setText(f"接收电源: ✓ {self._trim_idn(idn)}")
                 self._lbl_rx_pwr.setToolTip(idn)
                 self._set_status_indicator(self._ind_rx_pwr, "ok")
-            self._rx_pwr.set_voltage(rx_v)
-            self._rx_pwr.set_current(rx_c)
             self._log(f"  RX电源: {idn}")
         except Exception as e:
             if psu_type == "gpp4323":
@@ -513,16 +506,11 @@ class MainWindow(QMainWindow):
             if psu_type == "gpp4323":
                 gpp_cfg = self.config.data.instruments.gpp4323
                 self._tx_pwr = Gpp4323(port=gpp_cfg.serial_port, channel=gpp_cfg.ch_tx, baud_rate=gpp_cfg.baud_rate)
-                tx_v = float(gpp_cfg.tx_voltage or "24.0")
-                tx_c = float(gpp_cfg.tx_current or "1.0")
             else:
                 self._tx_pwr = PowerSupply(
-                    ip=cfg.tx_power_supply.ip,
-                    port=cfg.tx_power_supply.port,
+                    ip=cfg.tx_power_supply.ip, port=cfg.tx_power_supply.port,
                     timeout_sec=cfg.tx_power_supply.timeout_sec,
                 )
-                tx_v = float(cfg.tx_power_supply.voltage or "24.0")
-                tx_c = float(cfg.tx_power_supply.current or "1.0")
             idn = self._tx_pwr.connect()
             if psu_type == "gpp4323":
                 self._gpp_lbl.setToolTip(idn)
@@ -531,8 +519,6 @@ class MainWindow(QMainWindow):
                 self._lbl_tx_pwr.setText("发射电源: ✓ 已连接")
                 self._lbl_tx_pwr.setToolTip(idn)
                 self._set_status_indicator(self._ind_tx_pwr, "ok")
-            self._tx_pwr.set_voltage(tx_v)
-            self._tx_pwr.set_current(tx_c)
             self._log(f"  TX电源: {idn}")
         except Exception as e:
             if psu_type == "gpp4323":

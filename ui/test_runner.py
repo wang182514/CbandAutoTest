@@ -102,6 +102,7 @@ class TestRunner(QThread):
             self.log_signal.emit(f"{'='*50}")
 
             try:
+                base.apply_power_limits()
                 t0 = time.monotonic()
                 result = runner(base)
                 elapsed = time.monotonic() - t0

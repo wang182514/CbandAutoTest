@@ -55,6 +55,26 @@ class TestBase:
     def report_progress(self, current: int, total: int):
         self._progress_fn(current, total)
 
+    # ---- power limits (re-applies every test, no reconnect needed) ----
+
+    def apply_power_limits(self):
+        """Read voltage/current from config and set on instruments.
+        Called before each test so config changes take effect without reconnect."""
+        psu_type = self.cfg.get("instruments.power_supply_type", "gwinstek_tcp")
+        if psu_type == "gpp4323":
+            gpp = self.cfg.instruments.gpp4323
+            self.rx_pwr.set_voltage(float(gpp.rx_voltage or 12.0))
+            self.rx_pwr.set_current(float(gpp.rx_current or 1.0))
+            self.tx_pwr.set_voltage(float(gpp.tx_voltage or 24.0))
+            self.tx_pwr.set_current(float(gpp.tx_current or 1.0))
+        else:
+            rx = self.cfg.instruments.rx_power_supply
+            tx = self.cfg.instruments.tx_power_supply
+            self.rx_pwr.set_voltage(float(rx.voltage or 12.0))
+            self.rx_pwr.set_current(float(rx.current or 1.0))
+            self.tx_pwr.set_voltage(float(tx.voltage or 24.0))
+            self.tx_pwr.set_current(float(tx.current or 1.0))
+
     # ---- stop control ------------------------------------------------------
 
     def set_stop_check(self, fn: callable):
