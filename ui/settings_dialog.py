@@ -2,6 +2,8 @@
 Settings dialog — tabbed editor for ALL configurable parameters.
 """
 
+import os
+
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QFormLayout,
     QLineEdit, QDoubleSpinBox, QSpinBox, QCheckBox, QPushButton,
@@ -370,7 +372,7 @@ class SettingsDialog(QDialog):
         pass
 
     def _on_accept(self):
-        """Save all UI values back to config."""
+        """Save all UI values back to config and persist to disk."""
         c = self._cfg.data
 
         # Instruments
@@ -491,5 +493,10 @@ class SettingsDialog(QDialog):
 
         c.sanitize.noise_delta_max.random_min = self._san_noise.value()
         c.sanitize.noise_delta_max.random_max = self._san_noise_max.value()
+
+        # Persist to disk so changes survive restart
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        user_path = os.path.join(base_dir, "config", "user_settings.json")
+        self._cfg.save(user_path)
 
         self.accept()
