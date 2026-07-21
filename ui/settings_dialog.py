@@ -81,24 +81,27 @@ class SettingsDialog(QDialog):
         l.addRow("电源类型:", self._psu_type_combo)
 
         # GPP-4323 settings (shown when gpp4323 selected)
-        self._gpp4323_com = self._add_line(l, "GPP4323 串口", c.get("gpp4323.serial_port", "COM11"))
-        self._gpp4323_baud = self._add_spin(l, "GPP4323 波特率", int(c.get("gpp4323.baud_rate", "9600")), 1200, 921600)
-        self._gpp4323_ch_rx = self._add_spin(l, "GPP4323 RX通道", int(c.get("gpp4323.ch_rx", "1")), 1, 4)
-        self._gpp4323_ch_tx = self._add_spin(l, "GPP4323 TX通道", int(c.get("gpp4323.ch_tx", "2")), 1, 4)
-        self._gpp4323_rx_v = self._add_double(l, "RX电压 (V)", c.get("gpp4323.rx_voltage", "12.0"), 0, 60)
-        self._gpp4323_rx_c = self._add_double(l, "RX电流 (A)", c.get("gpp4323.rx_current", "1.0"), 0, 10)
-        self._gpp4323_tx_v = self._add_double(l, "TX电压 (V)", c.get("gpp4323.tx_voltage", "24.0"), 0, 60)
-        self._gpp4323_tx_c = self._add_double(l, "TX电流 (A)", c.get("gpp4323.tx_current", "1.0"), 0, 10)
+        gpp_cfg = c.gpp4323
+        self._gpp4323_com = self._add_line(l, "GPP4323 串口", gpp_cfg.get("serial_port", "COM11"))
+        self._gpp4323_baud = self._add_spin(l, "GPP4323 波特率", int(gpp_cfg.get("baud_rate", "9600")), 1200, 921600)
+        self._gpp4323_ch_rx = self._add_spin(l, "GPP4323 RX通道", int(gpp_cfg.get("ch_rx", "1")), 1, 4)
+        self._gpp4323_ch_tx = self._add_spin(l, "GPP4323 TX通道", int(gpp_cfg.get("ch_tx", "2")), 1, 4)
+        self._gpp4323_rx_v = self._add_double(l, "RX电压 (V)", gpp_cfg.get("rx_voltage", "12.0"), 0, 60)
+        self._gpp4323_rx_c = self._add_double(l, "RX电流 (A)", gpp_cfg.get("rx_current", "1.0"), 0, 10)
+        self._gpp4323_tx_v = self._add_double(l, "TX电压 (V)", gpp_cfg.get("tx_voltage", "24.0"), 0, 60)
+        self._gpp4323_tx_c = self._add_double(l, "TX电流 (A)", gpp_cfg.get("tx_current", "1.0"), 0, 10)
 
         # TCP power supply (shown when gwinstek_tcp selected)
-        self._rx_pwr_ip = self._add_line(l, "RX电源 IP", c.rx_power_supply.ip)
-        self._rx_pwr_port = self._add_spin(l, "RX电源端口", c.rx_power_supply.port, 1, 65535)
-        self._tx_pwr_ip = self._add_line(l, "TX电源 IP", c.tx_power_supply.ip)
-        self._tx_pwr_port = self._add_spin(l, "TX电源端口", c.tx_power_supply.port, 1, 65535)
-        self._rx_pwr_v = self._add_double(l, "RX电压 (V)", c.get("rx_power_supply.voltage", "12.0"), 0, 60)
-        self._rx_pwr_c = self._add_double(l, "RX电流 (A)", c.get("rx_power_supply.current", "1.0"), 0, 10)
-        self._tx_pwr_v = self._add_double(l, "TX电压 (V)", c.get("tx_power_supply.voltage", "24.0"), 0, 60)
-        self._tx_pwr_c = self._add_double(l, "TX电流 (A)", c.get("tx_power_supply.current", "1.0"), 0, 10)
+        rx_cfg = c.rx_power_supply
+        tx_cfg = c.tx_power_supply
+        self._rx_pwr_ip = self._add_line(l, "RX电源 IP", rx_cfg.ip)
+        self._rx_pwr_port = self._add_spin(l, "RX电源端口", rx_cfg.port, 1, 65535)
+        self._tx_pwr_ip = self._add_line(l, "TX电源 IP", tx_cfg.ip)
+        self._tx_pwr_port = self._add_spin(l, "TX电源端口", tx_cfg.port, 1, 65535)
+        self._rx_pwr_v = self._add_double(l, "RX电压 (V)", rx_cfg.get("voltage", "12.0"), 0, 60)
+        self._rx_pwr_c = self._add_double(l, "RX电流 (A)", rx_cfg.get("current", "1.0"), 0, 10)
+        self._tx_pwr_v = self._add_double(l, "TX电压 (V)", tx_cfg.get("voltage", "24.0"), 0, 60)
+        self._tx_pwr_c = self._add_double(l, "TX电流 (A)", tx_cfg.get("current", "1.0"), 0, 10)
 
         self._on_psu_type_changed(self._psu_type_combo.currentIndex())
 
