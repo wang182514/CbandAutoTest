@@ -431,6 +431,8 @@ class MainWindow(QMainWindow):
         if not self.config.get("test_date"):
             from datetime import date
             self.config.set("test_date", date.today().strftime("%Y.%m.%d"))
+        # Re-apply PSU mode in case it was changed via settings dialog
+        self._apply_psu_mode()
 
     def _save_ui_to_config(self):
         self.config.set("serial_number", self._edit_sn.text())
