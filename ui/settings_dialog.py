@@ -359,16 +359,38 @@ class SettingsDialog(QDialog):
     # ========================================================================
 
     def _on_psu_type_changed(self, index: int):
-        """Show/hide GPP4323 vs TCP power supply fields."""
+        """Show/hide GPP4323 vs TCP power supply fields (including labels)."""
         is_gpp = (index == 0)
         gpp_fields = [self._gpp4323_com, self._gpp4323_baud, self._gpp4323_ch_rx, self._gpp4323_ch_tx,
                        self._gpp4323_rx_v, self._gpp4323_rx_c, self._gpp4323_tx_v, self._gpp4323_tx_c]
         tcp_fields = [self._rx_pwr_ip, self._rx_pwr_port, self._tx_pwr_ip, self._tx_pwr_port,
                        self._rx_pwr_v, self._rx_pwr_c, self._tx_pwr_v, self._tx_pwr_c]
+        # Hide the label + field for each row
         for w in gpp_fields:
             w.setVisible(is_gpp)
+            self._hide_form_label(w, is_gpp)
         for w in tcp_fields:
             w.setVisible(not is_gpp)
+            self._hide_form_label(w, not is_gpp)
+
+    @staticmethod
+    def _hide_form_label(field: QWidget, visible: bool):
+        """Show/hide the QFormLayout label associated with a field widget."""
+        parent = field.parentWidget()
+        if parent is None:
+            return
+        layout = parent.layout()
+        if layout is None:
+            return
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            if item is not None and item.widget() is field:
+                # QFormLayout pairs: label at i-1, field at i
+                if i > 0:
+                    label_item = layout.itemAt(i - 1)
+                    if label_item is not None and label_item.widget() is not None:
+                        label_item.widget().setVisible(visible)
+                break
 
     def _load_all(self):
         """UI is already pre-populated in _tab_* methods from config."""
