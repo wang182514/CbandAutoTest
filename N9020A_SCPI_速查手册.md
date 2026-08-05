@@ -30,7 +30,16 @@
 
 | 命令 | 方向 | 说明 |
 |------|:---:|------|
-| `:MMEM:LOAD:STAT "<文件名>"` | W | 加载仪器本地存储的状态模板（如 `state_RX_NF.state`）。必须先 `*CLS` 清错误队列，后接 `*OPC?` 等待完成 |
+| `:MMEM:LOAD:STAT "<文件名>"` | W | 加载仪器本地存储的状态模板。必须先 `*CLS` 清错误队列，后接 `*OPC?` 等待完成 |
+
+**项目常用模板**：
+
+| 文件名 | 用途 |
+|--------|------|
+| `state_RX_NF.state` | 接收噪声系数 + 增益 |
+| `state_PN.state` | 相位噪声 |
+| `State_ACPR.state` | ACPR / 主信道功率 |
+| `State_Psat.state` | 饱和功率 |
 
 ---
 
@@ -42,6 +51,7 @@
 |------|------|
 | `:SENS:FREQ:STAR <value>GHz` | 起始频率 |
 | `:SENS:FREQ:STOP <value>GHz` | 终止频率 |
+| `:FREQuency:CENTer <value>GHz` | 中心频率（等效于设 STAR/STOP，写法更短） |
 | `:SENS:FREQ:STAR <value>MHz` | 起始频率（窄扫宽用 MHz） |
 | `:SENS:FREQ:STOP <value>MHz` | 终止频率（窄扫宽用 MHz） |
 | `:SENS:BAND:RES <value>KHz` | 分辨率带宽（RBW） |
@@ -83,6 +93,26 @@
 | 命令 | 说明 |
 |------|------|
 | `:DET:TRAC1:POS ON` | POS（峰值）检波器，噪声 Marker 建议用 |
+
+### 4.6 ACPR 测量（邻信道功率比）
+
+| 命令 | 方向 | 说明 |
+|------|:---:|------|
+| `:MMEM:LOAD:STAT "State_ACPR.state"` | W | 加载 ACPR 测量模板（预配信道间隔、带宽、偏移） |
+| `:READ:ACP?` | Q | 触发一次 ACPR 测量并返回结果。**返回格式**：`acp_m,acp_l,acp_u` — 分别为主信道功率(dBm)、低侧 ACPR(dBc)、高侧 ACPR(dBc) |
+| `:INIT:IMM` | W | 触发单次测量（用于连续测量模式下手动触发） |
+
+> **典型流程**（参考 `UPautoTestV0_4.m`）：
+> ```
+> :INST SA  →  :MMEM:LOAD:STAT "State_ACPR.state"
+> :FREQuency:CENTer 14.125GHz
+> :DISP:WIND1:TRACe:Y:RLEVel:OFFSet 35.1   (线损补偿)
+> :INIT:CONT ON  →  :INIT:IMM  →  pause(2s)
+> :READ:ACP?   →  返回 "12.3,-28.5,-29.1"
+> ```
+> **ACPR 取值**：`max(acp_l, acp_u)` 为最终 ACPR 值（取较差侧）。
+>
+> **饱和功率测量模板**：`State_Psat.state`，配合 `:CALC:MARK1:MAX` + `:CALC:MARK1:Y?` 读峰值。
 
 ---
 
@@ -171,6 +201,15 @@ PN 测一个点:
   :INIT:CONT OFF  →  :INIT:IMM  →  *OPC? (timeout=120s)
   :CALC:LPL:MARK1:X?  →  偏移 (Hz)
   :CALC:LPL:MARK1:Y?  →  PN (dBc/Hz)
+
+ACPR 测量（N9020A + SMU200A）:
+  :INST SA
+  :MMEM:LOAD:STAT "State_ACPR.state"  →  *OPC?
+  :FREQ:CENT 14.125GHz
+  :DISP:WIND1:TRAC:Y:RLEV:OFFS 35.1
+  :INIT:CONT ON  →  :INIT:IMM
+  pause(2s)  →  :READ:ACP?
+  → 返回 acp_m(dBm), acp_l(dBc), acp_u(dBc)
 
 清理:
   :CALC:MARK:AOFF   →  :CALC:MARK1:FUNC OFF
