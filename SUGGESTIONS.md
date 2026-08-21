@@ -64,6 +64,27 @@ PySide6 中 `self.sender()` 在 lambda → method 的嵌套调用链中返回 No
 
 尝试用 `self._inst.write = wrapper` 给 VISA 资源动态加 debug 日志，导致 `Signal source has been deleted` 异常。**正确方式**：显式在代码中加 `base.log.info("[SA] ...")` 日志行。
 
+### 4. 频谱仪截图读取的三个连坑（N9020A）
+
+症状：`MMEM:DATA?` 读回来的截图要么是 0 字节空文件，要么只有几字节的损坏 PNG（打开是空白/占位画面），错误队列报 `-410,"Query INTERRUPTED"`。截图命令本身没问题（`MMEM:STOR:SCR` 能正常生成），坑全在**读取**环节，共三处：
+
+1. **`MMEM:DATA?` 必须用文件名，不能用完整路径**。存储时 `MMEM:STOR:SCR "D:\...\tmp.png"` 用完整路径，但读取时 `MMEM:DATA? "tmp.png"` 要切回文件名（相对仪器当前 MMEM 目录）。传完整路径会让查询失败、返回空。
+
+2. **二进制块头要按 IEEE 488.2 定长块解析，不能 `find(b"\n")`**。SCPI 定长块是 `#<位数><字节长度><数据>`，中间没有换行符；且 PNG 二进制里到处都是 `0x0A`，`find(b"\n")` 会切到数据内部。不过实测 VXI-11 (TCPIP) 下 N9020A 的 `MMEM:DATA?` 返回的是**纯 PNG 字节、无 `#` 头**，所以解析逻辑要兼容两种情况：以 `#` 开头就按定长块截取，否则原样返回。
+
+3. **`read_termination` 会截断二进制 `read_raw()`（真正的根因）**。`connect()` 里设了 `read_termination = "\n"`，而 PyVISA 的 `read_raw(size=None)` 也会在终止符处停止。PNG 魔数头 `\x89PNG\r\n\x1a\n` 的第 6 字节正好是 `\n`，于是只读到 6 字节就返回，剩余响应被下一条命令打断 → `-410 Query INTERRUPTED`。**解决**：读二进制前临时把 `read_termination` 置 `None`，读完恢复：
+
+```python
+old_termination = self._inst.read_termination
+try:
+    self._inst.read_termination = None  # 禁用文本终止符，避免二进制里的 \n 截断
+    raw = self._inst.read_raw()
+finally:
+    self._inst.read_termination = old_termination
+```
+
+**快速定位**：截图 0 字节 = 读取失败（查 `MMEM:DATA?` 路径）；PNG 头损坏 = 块解析问题；错误队列报 `-410` = 读取被截断（查 `read_termination`）。
+
 ---
 
 ## 三、python-docx 踩坑

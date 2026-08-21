@@ -242,25 +242,31 @@ class SpectrumAnalyzer:
         internal_path: str = r"D:\User_My_Documents\Instrument\My Documents\tmp.png",
     ) -> str:
         """Capture screen to local PNG file. Returns full local path."""
+        # STOR:SCR writes to the full instrument-internal path, but
+        # MMEM:DATA? must be addressed by file name (relative to the
+        # instrument's current MMEM directory) — matching the MATLAB driver.
+        file_name = os.path.basename(internal_path)
+
         self._inst.write(":DISP:FSCR ON")
         self._inst.write(f':MMEM:STOR:SCR:THEM {theme}')
         self._inst.write(f':MMEM:STOR:SCR "{internal_path}"')
         self._inst.query("*OPC?")
         time.sleep(0.5)
 
-        self._inst.write(f':MMEM:DATA? "{internal_path}"')
-        raw = self._inst.read_raw()
-        # PyVISA returns the whole block including the # header;
-        # we strip it manually.
-        if raw.startswith(b"#"):
-            idx = raw.find(b"\n")
-            if idx > 0:
-                # #nLEN\n... form
-                img_data = raw[idx + 1:]
-            else:
-                img_data = raw[2:]  # fallback
-        else:
-            img_data = raw
+        old_timeout = self._inst.timeout
+        old_termination = self._inst.read_termination
+        try:
+            self._inst.timeout = max(old_timeout, 120000)
+            # 二进制 PNG 数据里含有 0x0A 字节，必须临时禁用文本终止符，
+            # 否则 read_raw() 会在数据内部提前停止（读到 \n 就返回）。
+            self._inst.read_termination = None
+            self._inst.write(f':MMEM:DATA? "{file_name}"')
+            raw = self._inst.read_raw()
+        finally:
+            self._inst.timeout = old_timeout
+            self._inst.read_termination = old_termination
+
+        img_data = self._parse_binblock(raw)
 
         os.makedirs(local_dir, exist_ok=True)
         full_path = os.path.join(local_dir, local_filename)
@@ -269,3 +275,20 @@ class SpectrumAnalyzer:
 
         self._inst.write(":DISP:FSCR OFF")
         return full_path
+
+    @staticmethod
+    def _parse_binblock(raw: bytes) -> bytes:
+        """Extract payload from an IEEE 488.2 definite-length block.
+
+        Format: ``#<num_digits><byte_count><data>``, e.g.
+        ``b"#6204800"`` followed by 204800 raw PNG bytes.  No newline
+        separator is involved, so we must not scan for one.
+        """
+        if not raw.startswith(b"#") or len(raw) < 2:
+            return raw
+        try:
+            num_digits = int(raw[1:2])
+            byte_count = int(raw[2:2 + num_digits])
+        except (ValueError, TypeError):
+            return raw
+        return raw[2 + num_digits: 2 + num_digits + byte_count]

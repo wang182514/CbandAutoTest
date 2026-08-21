@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 修复连接仪器后，长 IDN 文本把左侧面板撑宽、导致下方测试按钮被拉长遮挡的问题。
 - 修复测试过程中结果面板暂时不可见的问题。
+- 修复频谱仪截图读取失败（`instruments/spectrum_analyzer.py`）：`MMEM:DATA?` 改用文件名、按 IEEE 488.2 定长块解析二进制、读取时临时禁用 `read_termination`。此前截图文件为 0 字节或 6 字节的损坏 PNG（PNG 魔数头在 `\n` 处被截断），并报 `-410,"Query INTERRUPTED"`。
 
 ## [1.0.0] - 2026-06-22
 
